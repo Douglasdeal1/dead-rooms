@@ -1,71 +1,85 @@
 "use strict";
 
-/* =========================================================
-   DEAD ROOMS MOBILE
-   MULTIPLAYER SERVER V2
+/*
+=========================================================
+ DEAD ROOMS MOBILE - MULTIPLAYER SERVER V3
 
-   - Node.js
-   - Express
-   - Socket.IO
-   - 2 jugadores por sala
-   - Host autoritativo para zombis, daño y mundo
-========================================================= */
+ - 2 jugadores por sala
+ - Host autoritativo para zombis y daño
+ - Ambos jugadores pueden disparar
+ - Sincronización de armas
+ - Sincronización de vida/muerte
+ - La partida continúa si uno muere
+ - Game Over se controla cuando ambos mueren
+ - Mundo fijo 1280 x 720
+=========================================================
+*/
 
 const express = require("express");
 const http = require("http");
-const path = require("path");
 const { Server } = require("socket.io");
 
-/* =====================================================
-   SERVER
-===================================================== */
-
 const app = express();
-const httpServer = http.createServer(app);
+const server = http.createServer(app);
 
-const io = new Server(httpServer, {
-
-    cors:{
-        origin:"*",
-        methods:["GET","POST"]
-    },
-
-    pingInterval:10000,
-    pingTimeout:20000
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
 });
 
+
+/* =====================================================
+   CONFIG
+===================================================== */
+
 const PORT = process.env.PORT || 3000;
-
-const MAX_PLAYERS_PER_ROOM = 2;
-
-/*
-El mundo es SIEMPRE 1280x720.
-
-Esto coincide con el nuevo index.html.
-*/
 
 const WORLD_W = 1280;
 const WORLD_H = 720;
 
+const MAX_PLAYERS = 2;
+
+const ROOM_CODE_LENGTH = 5;
+
+const ROOM_MAX_AGE =
+    1000 * 60 * 60 * 6;
+
+
 /* =====================================================
-   WEBSITE
+   STATIC FILES
 ===================================================== */
 
 app.use(
-    express.static(
-        path.join(__dirname)
-    )
+    express.static(__dirname)
 );
 
-app.get("/", (req,res)=>{
 
-    res.sendFile(
-        path.join(
-            __dirname,
-            "index.html"
-        )
-    );
-});
+/* =====================================================
+   HEALTH CHECK
+===================================================== */
+
+app.get(
+    "/health",
+    (req, res) => {
+
+        res.json({
+            ok: true,
+            game: "Dead Rooms Mobile",
+            version: 3,
+            multiplayer: true,
+            world: {
+                width: WORLD_W,
+                height: WORLD_H
+            },
+            rooms: rooms.size,
+            sockets: io.engine.clientsCount,
+            timestamp: new Date().toISOString()
+        });
+    }
+);
+
 
 /* =====================================================
    ROOMS
@@ -73,109 +87,68 @@ app.get("/", (req,res)=>{
 
 const rooms = new Map();
 
-/* =====================================================
-   HEALTH
-===================================================== */
-
-app.get("/health",(req,res)=>{
-
-    res.json({
-
-        ok:true,
-
-        game:"Dead Rooms Mobile",
-
-        multiplayer:true,
-
-        version:2,
-
-        rooms:rooms.size,
-
-        players:
-            io.engine.clientsCount,
-
-        world:{
-            width:WORLD_W,
-            height:WORLD_H
-        },
-
-        timestamp:
-            Date.now()
-    });
-});
 
 /* =====================================================
    HELPERS
 ===================================================== */
 
-function safeNumber(
+function clamp(
     value,
-    fallback,
     min,
     max
-){
-
-    const number =
-        Number(value);
-
-    if(
-        !Number.isFinite(number)
-    ){
-        return fallback;
-    }
+) {
 
     return Math.max(
         min,
         Math.min(
             max,
-            number
+            value
         )
     );
 }
 
 
-function normalizeRoomCode(value){
+function numberOr(
+    value,
+    fallback
+) {
 
-    return String(
-        value || ""
-    )
-    .trim()
-    .toUpperCase()
-    .replace(
-        /[^A-Z0-9]/g,
-        ""
-    )
-    .slice(0,5);
+    const n =
+        Number(value);
+
+    return Number.isFinite(n)
+        ? n
+        : fallback;
 }
 
 
-function createRoomCode(){
+function generateRoomCode() {
 
-    const characters =
+    const chars =
         "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
     let code;
 
-    do{
+    do {
 
-        code="";
+        code = "";
 
-        for(
-            let i=0;
-            i<5;
+        for (
+            let i = 0;
+            i < ROOM_CODE_LENGTH;
             i++
-        ){
+        ) {
 
             code +=
-                characters[
+                chars[
                     Math.floor(
                         Math.random() *
-                        characters.length
+                        chars.length
                     )
                 ];
         }
 
-    }while(
+    } while (
         rooms.has(code)
     );
 
@@ -183,20 +156,32 @@ function createRoomCode(){
 }
 
 
-function getSocketRoom(socket){
+function getRoomBySocket(
+    socket
+) {
 
     const code =
         socket.data.roomCode;
 
-    if(!code){
+    if (!code) {
         return null;
     }
 
-    return (
-        rooms.get(code) ||
-        null
+    return rooms.get(code) || null;
+}
+
+
+function isRoomHost(
+    socket,
+    room
+) {
+
+    return Boolean(
+        room &&
+        room.host === socket.id
     );
 }
+
 
 /* =====================================================
    PLAYER STATE
@@ -204,1282 +189,1496 @@ function getSocketRoom(socket){
 
 function createInitialPlayerState(
     isHost
-){
+) {
 
     return {
 
         x:
             isHost
-            ?590
-            :690,
+                ? 590
+                : 690,
 
-        y:360,
+        y: 360,
 
-        rotation:0,
+        rotation: 0,
 
-        health:100,
+        health: 100,
 
-        weaponIndex:0,
+        dead: false,
 
-        dead:false
+        weaponIndex: 0
     };
 }
 
 
-function sanitizePlayerState(data){
+/*
+El cliente solamente puede controlar:
 
-    data =
-        data &&
-        typeof data==="object"
-        ?data
-        :{};
+- posición
+- rotación
+- arma
+
+NO puede decidir su propia vida o muerte.
+Eso queda en manos del Host.
+*/
+
+function sanitizePlayerMovement(
+    incoming,
+    previous
+) {
+
+    if (
+        !incoming ||
+        typeof incoming !== "object"
+    ) {
+
+        return previous;
+    }
+
+
+    const x =
+        clamp(
+            numberOr(
+                incoming.x,
+                previous.x
+            ),
+            45,
+            WORLD_W - 45
+        );
+
+
+    const y =
+        clamp(
+            numberOr(
+                incoming.y,
+                previous.y
+            ),
+            45,
+            WORLD_H - 45
+        );
+
+
+    const rotation =
+        numberOr(
+            incoming.rotation,
+            previous.rotation
+        );
+
+
+    const weaponIndex =
+        Math.floor(
+            clamp(
+                numberOr(
+                    incoming.weaponIndex,
+                    previous.weaponIndex
+                ),
+                0,
+                3
+            )
+        );
+
 
     return {
 
+        x,
+        y,
+        rotation,
+
+        weaponIndex,
+
         /*
-        Nunca permitimos coordenadas
-        fuera del mundo lógico.
+        Vida/muerte preservadas.
         */
 
+        health:
+            previous.health,
+
+        dead:
+            previous.dead
+    };
+}
+
+
+/* =====================================================
+   WORLD STATE
+===================================================== */
+
+function sanitizeZombie(
+    zombie
+) {
+
+    if (
+        !zombie ||
+        typeof zombie !== "object"
+    ) {
+
+        return null;
+    }
+
+
+    return {
+
         x:
-            safeNumber(
-                data.x,
-                640,
-                45,
-                WORLD_W-45
+            clamp(
+                numberOr(
+                    zombie.x,
+                    640
+                ),
+                0,
+                WORLD_W
             ),
 
         y:
-            safeNumber(
-                data.y,
-                360,
-                45,
-                WORLD_H-45
-            ),
-
-        rotation:
-            safeNumber(
-                data.rotation,
+            clamp(
+                numberOr(
+                    zombie.y,
+                    360
+                ),
                 0,
-                -Math.PI*4,
-                Math.PI*4
+                WORLD_H
             ),
 
-        weaponIndex:
-            Math.floor(
-                safeNumber(
-                    data.weaponIndex,
-                    0,
-                    0,
-                    3
+        type:
+            [
+                "normal",
+                "fast",
+                "tank"
+            ].includes(
+                zombie.type
+            )
+                ? zombie.type
+                : "normal",
+
+        radius:
+            clamp(
+                numberOr(
+                    zombie.radius,
+                    16
+                ),
+                5,
+                40
+            ),
+
+        health:
+            Math.max(
+                0,
+                numberOr(
+                    zombie.health,
+                    0
                 )
+            ),
+
+        maxHealth:
+            Math.max(
+                1,
+                numberOr(
+                    zombie.maxHealth,
+                    100
+                )
+            ),
+
+        dead:
+            Boolean(
+                zombie.dead
             )
     };
 }
 
-/* =====================================================
-   ZOMBIES
-===================================================== */
 
-function sanitizeZombies(data){
+function sanitizeWorldState(
+    incoming
+) {
 
-    if(
-        !Array.isArray(data)
-    ){
-        return [];
+    if (
+        !incoming ||
+        typeof incoming !== "object"
+    ) {
+
+        return null;
     }
 
-    return data
-        .slice(0,150)
-        .map(zombie=>{
 
-            zombie =
-                zombie &&
-                typeof zombie==="object"
-                ?zombie
-                :{};
+    const zombies =
+        Array.isArray(
+            incoming.zombies
+        )
+            ?
+            incoming.zombies
+                .slice(0, 150)
+                .map(
+                    sanitizeZombie
+                )
+                .filter(Boolean)
+            :
+            [];
 
-            let type =
-                String(
-                    zombie.type ||
-                    "normal"
-                );
 
-            if(
-                type!=="normal" &&
-                type!=="fast" &&
-                type!=="tank"
-            ){
-                type="normal";
-            }
+    return {
 
-            return {
-
-                x:
-                    safeNumber(
-                        zombie.x,
-                        640,
-                        0,
-                        WORLD_W
-                    ),
-
-                y:
-                    safeNumber(
-                        zombie.y,
-                        360,
-                        0,
-                        WORLD_H
-                    ),
-
-                type,
-
-                radius:
-                    safeNumber(
-                        zombie.radius,
-                        16,
-                        5,
-                        40
-                    ),
-
-                health:
-                    safeNumber(
-                        zombie.health,
-                        100,
-                        0,
-                        10000
-                    ),
-
-                maxHealth:
-                    safeNumber(
-                        zombie.maxHealth,
-                        100,
-                        1,
-                        10000
-                    ),
-
-                dead:
-                    Boolean(
-                        zombie.dead
+        wave:
+            Math.max(
+                0,
+                Math.floor(
+                    numberOr(
+                        incoming.wave,
+                        0
                     )
-            };
-        });
+                )
+            ),
+
+        score:
+            Math.max(
+                0,
+                Math.floor(
+                    numberOr(
+                        incoming.score,
+                        0
+                    )
+                )
+            ),
+
+        enemiesToSpawn:
+            Math.max(
+                0,
+                Math.floor(
+                    numberOr(
+                        incoming.enemiesToSpawn,
+                        0
+                    )
+                )
+            ),
+
+        zombies
+    };
 }
+
 
 /* =====================================================
-   ROOM PLAYERS
+   PLAYER COUNT
 ===================================================== */
 
-function getHostSocket(room){
+function emitPlayerCount(
+    room
+) {
 
-    return io.sockets.sockets.get(
-        room.host
-    );
-}
-
-
-function getClientId(room){
-
-    for(
-        const playerId
-        of room.players
-    ){
-
-        if(
-            playerId !==
-            room.host
-        ){
-
-            return playerId;
-        }
-    }
-
-    return null;
-}
-
-/* =====================================================
-   REMOVE PLAYER
-===================================================== */
-
-function removePlayerFromRoom(
-    socket,
-    disconnected=false
-){
-
-    const code =
-        socket.data.roomCode;
-
-    if(!code){
+    if (!room) {
         return;
     }
 
-    const room =
-        rooms.get(code);
 
-    if(!room){
-
-        socket.data.roomCode=null;
-        socket.data.isHost=false;
-
-        return;
-    }
-
-    room.players.delete(
-        socket.id
-    );
-
-    room.playerStates.delete(
-        socket.id
-    );
-
-    /*
-    HOST SALE:
-    cerramos la sala.
-    */
-
-    if(
-        room.host === socket.id
-    ){
-
-        socket
-            .to(code)
-            .emit(
-                "roomClosed"
-            );
-
-        const sockets =
-            io.sockets.adapter.rooms.get(
-                code
-            );
-
-        if(sockets){
-
-            for(
-                const socketId
-                of [...sockets]
-            ){
-
-                const client =
-                    io.sockets.sockets.get(
-                        socketId
-                    );
-
-                if(client){
-
-                    client.data.roomCode=null;
-                    client.data.isHost=false;
-
-                    client.leave(code);
-                }
-            }
-        }
-
-        rooms.delete(code);
-
-        console.log(
-            "[ROOM CLOSED]",
-            code,
-            disconnected
-                ?"Host disconnected"
-                :"Host left"
-        );
-
-        return;
-    }
-
-    /*
-    CLIENT SALE.
-    */
-
-    socket
-        .to(code)
-        .emit(
-            "playerLeft",
-            {
-                playerId:
-                    socket.id
-            }
-        );
-
-    io
-        .to(code)
+    io.to(room.code)
         .emit(
             "roomPlayers",
             {
                 count:
-                    room.players.size
+                    room.players.size,
+
+                max:
+                    MAX_PLAYERS
             }
         );
-
-    socket.leave(code);
-
-    socket.data.roomCode=null;
-    socket.data.isHost=false;
 }
+
 
 /* =====================================================
    SOCKET.IO
 ===================================================== */
 
 io.on(
-"connection",
-socket=>{
-
-    console.log(
-        "[CONNECTED]",
-        socket.id
-    );
-
-    socket.data.roomCode=null;
-    socket.data.isHost=false;
-
-    /* =================================================
-       CREATE ROOM
-    ================================================= */
-
-    socket.on(
-    "createRoom",
-    callback=>{
-
-        if(
-            typeof callback !==
-            "function"
-        ){
-            return;
-        }
-
-        if(
-            socket.data.roomCode
-        ){
-
-            removePlayerFromRoom(
-                socket
-            );
-        }
-
-        const code =
-            createRoomCode();
-
-        const hostState =
-            createInitialPlayerState(
-                true
-            );
-
-        const room = {
-
-            code,
-
-            host:
-                socket.id,
-
-            players:
-                new Set([
-                    socket.id
-                ]),
-
-            playerStates:
-                new Map(),
-
-            started:false,
-
-            worldState:{
-                wave:0,
-                score:0,
-                enemiesToSpawn:0,
-                zombies:[]
-            },
-
-            createdAt:
-                Date.now()
-        };
-
-        room.playerStates.set(
-            socket.id,
-            hostState
-        );
-
-        rooms.set(
-            code,
-            room
-        );
-
-        socket.join(code);
-
-        socket.data.roomCode=
-            code;
-
-        socket.data.isHost=
-            true;
+    "connection",
+    socket => {
 
         console.log(
-            "[ROOM CREATED]",
-            code,
-            "HOST:",
+            "[CONNECT]",
             socket.id
         );
 
-        callback({
 
-            ok:true,
+        /* =================================================
+           CREATE ROOM
+        ================================================= */
 
-            code,
+        socket.on(
+            "createRoom",
+            callback => {
 
-            playerId:
-                socket.id,
+                try {
 
-            isHost:true
-        });
+                    /*
+                    Si estaba en otra sala,
+                    la abandona primero.
+                    */
 
-        io
-            .to(code)
-            .emit(
-                "roomPlayers",
-                {
-                    count:1
+                    leaveCurrentRoom(
+                        socket,
+                        false
+                    );
+
+
+                    const code =
+                        generateRoomCode();
+
+
+                    const room = {
+
+                        code,
+
+                        host:
+                            socket.id,
+
+                        players:
+                            new Set([
+                                socket.id
+                            ]),
+
+                        playerStates:
+                            new Map(),
+
+                        started:
+                            false,
+
+                        worldState: {
+                            wave: 0,
+                            score: 0,
+                            enemiesToSpawn: 0,
+                            zombies: []
+                        },
+
+                        createdAt:
+                            Date.now()
+                    };
+
+
+                    room.playerStates.set(
+                        socket.id,
+                        createInitialPlayerState(
+                            true
+                        )
+                    );
+
+
+                    rooms.set(
+                        code,
+                        room
+                    );
+
+
+                    socket.join(
+                        code
+                    );
+
+
+                    socket.data.roomCode =
+                        code;
+
+
+                    socket.data.isHost =
+                        true;
+
+
+                    console.log(
+                        "[ROOM CREATED]",
+                        code,
+                        socket.id
+                    );
+
+
+                    if (
+                        typeof callback ===
+                        "function"
+                    ) {
+
+                        callback({
+                            ok: true,
+                            code
+                        });
+                    }
+
+
+                    emitPlayerCount(
+                        room
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        "[CREATE ROOM ERROR]",
+                        error
+                    );
+
+
+                    if (
+                        typeof callback ===
+                        "function"
+                    ) {
+
+                        callback({
+                            ok: false,
+                            message:
+                                "Could not create room."
+                        });
+                    }
                 }
-            );
-    });
+            }
+        );
 
-    /* =================================================
-       JOIN ROOM
-    ================================================= */
 
-    socket.on(
-    "joinRoom",
-    (
-        rawCode,
-        callback
-    )=>{
+        /* =================================================
+           JOIN ROOM
+        ================================================= */
 
-        if(
-            typeof callback !==
-            "function"
-        ){
-            return;
-        }
+        socket.on(
+            "joinRoom",
+            (
+                requestedCode,
+                callback
+            ) => {
 
-        const code =
-            normalizeRoomCode(
-                rawCode
-            );
+                try {
 
-        if(
-            code.length!==5
-        ){
+                    const code =
+                        String(
+                            requestedCode || ""
+                        )
+                        .trim()
+                        .toUpperCase();
 
-            callback({
-                ok:false,
-                message:
-                    "Invalid room code."
-            });
 
-            return;
-        }
+                    const room =
+                        rooms.get(
+                            code
+                        );
 
-        const room =
-            rooms.get(code);
 
-        if(!room){
+                    if (!room) {
 
-            callback({
-                ok:false,
-                message:
-                    "Room not found."
-            });
+                        if (
+                            typeof callback ===
+                            "function"
+                        ) {
 
-            return;
-        }
+                            callback({
+                                ok: false,
+                                message:
+                                    "Room not found."
+                            });
+                        }
 
-        if(
-            room.started
-        ){
+                        return;
+                    }
 
-            callback({
-                ok:false,
-                message:
-                    "Match already started."
-            });
 
-            return;
-        }
+                    if (
+                        room.started
+                    ) {
 
-        if(
-            room.players.size >=
-            MAX_PLAYERS_PER_ROOM
-        ){
+                        if (
+                            typeof callback ===
+                            "function"
+                        ) {
 
-            callback({
-                ok:false,
-                message:
-                    "Room is full."
-            });
+                            callback({
+                                ok: false,
+                                message:
+                                    "Match already started."
+                            });
+                        }
 
-            return;
-        }
+                        return;
+                    }
 
-        if(
-            socket.data.roomCode
-        ){
 
-            removePlayerFromRoom(
+                    if (
+                        room.players.size >=
+                        MAX_PLAYERS
+                    ) {
+
+                        if (
+                            typeof callback ===
+                            "function"
+                        ) {
+
+                            callback({
+                                ok: false,
+                                message:
+                                    "Room is full."
+                            });
+                        }
+
+                        return;
+                    }
+
+
+                    leaveCurrentRoom(
+                        socket,
+                        false
+                    );
+
+
+                    room.players.add(
+                        socket.id
+                    );
+
+
+                    room.playerStates.set(
+                        socket.id,
+                        createInitialPlayerState(
+                            false
+                        )
+                    );
+
+
+                    socket.join(
+                        code
+                    );
+
+
+                    socket.data.roomCode =
+                        code;
+
+
+                    socket.data.isHost =
+                        false;
+
+
+                    console.log(
+                        "[ROOM JOIN]",
+                        code,
+                        socket.id
+                    );
+
+
+                    if (
+                        typeof callback ===
+                        "function"
+                    ) {
+
+                        callback({
+                            ok: true,
+                            code
+                        });
+                    }
+
+
+                    /*
+                    Avisar al Host.
+                    */
+
+                    socket
+                        .to(code)
+                        .emit(
+                            "playerJoined",
+                            {
+                                id:
+                                    socket.id
+                            }
+                        );
+
+
+                    emitPlayerCount(
+                        room
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        "[JOIN ERROR]",
+                        error
+                    );
+
+
+                    if (
+                        typeof callback ===
+                        "function"
+                    ) {
+
+                        callback({
+                            ok: false,
+                            message:
+                                "Could not join room."
+                        });
+                    }
+                }
+            }
+        );
+
+
+        /* =================================================
+           START MATCH
+        ================================================= */
+
+        socket.on(
+            "startMatch",
+            () => {
+
+                const room =
+                    getRoomBySocket(
+                        socket
+                    );
+
+
+                if (!room) {
+                    return;
+                }
+
+
+                if (
+                    !isRoomHost(
+                        socket,
+                        room
+                    )
+                ) {
+
+                    return;
+                }
+
+
+                if (
+                    room.players.size <
+                    2
+                ) {
+
+                    return;
+                }
+
+
+                room.started =
+                    true;
+
+
+                /*
+                Reiniciamos estado autoritativo.
+                */
+
+                for (
+                    const playerID
+                    of room.players
+                ) {
+
+                    room.playerStates.set(
+                        playerID,
+
+                        createInitialPlayerState(
+                            playerID ===
+                            room.host
+                        )
+                    );
+                }
+
+
+                room.worldState = {
+                    wave: 0,
+                    score: 0,
+                    enemiesToSpawn: 0,
+                    zombies: []
+                };
+
+
+                console.log(
+                    "[MATCH START]",
+                    room.code
+                );
+
+
+                io.to(room.code)
+                    .emit(
+                        "matchStarted"
+                    );
+            }
+        );
+
+
+        /* =================================================
+           PLAYER MOVEMENT
+        ================================================= */
+
+        socket.on(
+            "playerState",
+            incoming => {
+
+                const room =
+                    getRoomBySocket(
+                        socket
+                    );
+
+
+                if (
+                    !room ||
+                    !room.started
+                ) {
+
+                    return;
+                }
+
+
+                const previous =
+                    room.playerStates.get(
+                        socket.id
+                    );
+
+
+                if (!previous) {
+                    return;
+                }
+
+
+                /*
+                Jugador muerto:
+                no permitimos que siga
+                desplazándose desde el cliente.
+
+                Sí preservamos el estado.
+                */
+
+                let updated;
+
+
+                if (
+                    previous.dead
+                ) {
+
+                    updated = {
+                        ...previous,
+
+                        rotation:
+                            numberOr(
+                                incoming?.rotation,
+                                previous.rotation
+                            ),
+
+                        weaponIndex:
+                            previous.weaponIndex
+                    };
+
+                } else {
+
+                    updated =
+                        sanitizePlayerMovement(
+                            incoming,
+                            previous
+                        );
+                }
+
+
+                room.playerStates.set(
+                    socket.id,
+                    updated
+                );
+
+
+                /*
+                Enviar al OTRO jugador.
+                */
+
                 socket
-            );
-        }
-
-        room.players.add(
-            socket.id
+                    .to(room.code)
+                    .emit(
+                        "remotePlayerState",
+                        updated
+                    );
+            }
         );
 
-        room.playerStates.set(
-            socket.id,
-            createInitialPlayerState(
-                false
-            )
+
+        /* =================================================
+           CHANGE WEAPON
+        ================================================= */
+
+        socket.on(
+            "weaponChanged",
+            incoming => {
+
+                const room =
+                    getRoomBySocket(
+                        socket
+                    );
+
+
+                if (
+                    !room ||
+                    !room.started
+                ) {
+
+                    return;
+                }
+
+
+                const state =
+                    room.playerStates.get(
+                        socket.id
+                    );
+
+
+                if (
+                    !state ||
+                    state.dead
+                ) {
+
+                    return;
+                }
+
+
+                const weaponIndex =
+                    Math.floor(
+                        clamp(
+                            numberOr(
+                                incoming?.weaponIndex,
+                                state.weaponIndex
+                            ),
+                            0,
+                            3
+                        )
+                    );
+
+
+                state.weaponIndex =
+                    weaponIndex;
+
+
+                room.playerStates.set(
+                    socket.id,
+                    state
+                );
+
+
+                socket
+                    .to(room.code)
+                    .emit(
+                        "remoteWeaponChanged",
+                        {
+                            weaponIndex
+                        }
+                    );
+            }
         );
 
-        socket.join(code);
 
-        socket.data.roomCode=
-            code;
+        /* =================================================
+           SHOOT
 
-        socket.data.isHost=
-            false;
+           El servidor usa la posición que
+           conoce del jugador.
 
-        console.log(
-            "[PLAYER JOINED]",
-            socket.id,
-            "ROOM:",
+           Así evitamos que el cliente
+           invente otro origen.
+        ================================================= */
+
+        socket.on(
+            "shoot",
+            incoming => {
+
+                const room =
+                    getRoomBySocket(
+                        socket
+                    );
+
+
+                if (
+                    !room ||
+                    !room.started
+                ) {
+
+                    return;
+                }
+
+
+                const state =
+                    room.playerStates.get(
+                        socket.id
+                    );
+
+
+                if (
+                    !state ||
+                    state.dead
+                ) {
+
+                    return;
+                }
+
+
+                const rotation =
+                    numberOr(
+                        incoming?.rotation,
+                        state.rotation
+                    );
+
+
+                const weaponIndex =
+                    Math.floor(
+                        clamp(
+                            numberOr(
+                                incoming?.weaponIndex,
+                                state.weaponIndex
+                            ),
+                            0,
+                            3
+                        )
+                    );
+
+
+                /*
+                Sincronizamos también
+                la rotación/arma conocida.
+                */
+
+                state.rotation =
+                    rotation;
+
+
+                state.weaponIndex =
+                    weaponIndex;
+
+
+                room.playerStates.set(
+                    socket.id,
+                    state
+                );
+
+
+                const shot = {
+
+                    x:
+                        state.x,
+
+                    y:
+                        state.y,
+
+                    rotation,
+
+                    weaponIndex,
+
+                    shooter:
+                        socket.id
+                };
+
+
+                /*
+                IMPORTANTE:
+
+                No se devuelve al mismo
+                jugador porque su index V3
+                ya dibuja su bala
+                inmediatamente.
+
+                Solo va al compañero.
+                */
+
+                socket
+                    .to(room.code)
+                    .emit(
+                        "remoteShoot",
+                        shot
+                    );
+            }
+        );
+
+
+        /* =================================================
+           AUTHORITATIVE HEALTH
+
+           SOLO EL HOST puede decidir
+           el daño de zombis.
+        ================================================= */
+
+        socket.on(
+            "authoritativeHealth",
+            incoming => {
+
+                const room =
+                    getRoomBySocket(
+                        socket
+                    );
+
+
+                if (
+                    !room ||
+                    !room.started
+                ) {
+
+                    return;
+                }
+
+
+                if (
+                    !isRoomHost(
+                        socket,
+                        room
+                    )
+                ) {
+
+                    return;
+                }
+
+
+                if (
+                    !incoming ||
+                    typeof incoming !==
+                    "object"
+                ) {
+
+                    return;
+                }
+
+
+                let targetID = null;
+
+
+                if (
+                    incoming.target ===
+                    "host"
+                ) {
+
+                    targetID =
+                        room.host;
+
+                } else if (
+                    incoming.target ===
+                    "client"
+                ) {
+
+                    targetID =
+                        [...room.players]
+                        .find(
+                            id =>
+                                id !==
+                                room.host
+                        )
+                        || null;
+                }
+
+
+                if (!targetID) {
+                    return;
+                }
+
+
+                const state =
+                    room.playerStates.get(
+                        targetID
+                    );
+
+
+                if (!state) {
+                    return;
+                }
+
+
+                /*
+                Vida siempre 0..100.
+                */
+
+                const health =
+                    clamp(
+                        numberOr(
+                            incoming.health,
+                            state.health
+                        ),
+                        0,
+                        100
+                    );
+
+
+                /*
+                Una vez muerto,
+                no puede revivir mediante
+                un paquete posterior.
+                */
+
+                if (
+                    state.dead
+                ) {
+
+                    state.health = 0;
+                    state.dead = true;
+
+                } else {
+
+                    state.health =
+                        health;
+
+
+                    state.dead =
+                        health <= 0
+                        ||
+                        Boolean(
+                            incoming.dead
+                        );
+
+
+                    if (
+                        state.dead
+                    ) {
+
+                        state.health = 0;
+                    }
+                }
+
+
+                room.playerStates.set(
+                    targetID,
+                    state
+                );
+
+
+                /*
+                Enviar a LOS DOS.
+
+                De esta forma:
+
+                - el jugador dañado conoce
+                  su vida.
+                - el compañero conoce que
+                  murió.
+                - el Host puede seguir
+                  simulando aunque él muera.
+                */
+
+                io.to(room.code)
+                    .emit(
+                        "authoritativeHealth",
+                        {
+                            target:
+                                incoming.target,
+
+                            health:
+                                state.health,
+
+                            dead:
+                                state.dead
+                        }
+                    );
+
+
+                console.log(
+                    "[HEALTH]",
+                    room.code,
+                    incoming.target,
+                    state.health,
+                    state.dead
+                        ? "DEAD"
+                        : "ALIVE"
+                );
+            }
+        );
+
+
+        /* =================================================
+           WORLD STATE
+
+           SOLO HOST.
+        ================================================= */
+
+        socket.on(
+            "worldState",
+            incoming => {
+
+                const room =
+                    getRoomBySocket(
+                        socket
+                    );
+
+
+                if (
+                    !room ||
+                    !room.started
+                ) {
+
+                    return;
+                }
+
+
+                if (
+                    !isRoomHost(
+                        socket,
+                        room
+                    )
+                ) {
+
+                    return;
+                }
+
+
+                const state =
+                    sanitizeWorldState(
+                        incoming
+                    );
+
+
+                if (!state) {
+                    return;
+                }
+
+
+                room.worldState =
+                    state;
+
+
+                /*
+                El Host no necesita que
+                le devolvamos su mundo.
+
+                Solo Player 2.
+                */
+
+                socket
+                    .to(room.code)
+                    .emit(
+                        "worldState",
+                        state
+                    );
+            }
+        );
+
+
+        /* =================================================
+           LEAVE ROOM
+        ================================================= */
+
+        socket.on(
+            "leaveRoom",
+            () => {
+
+                leaveCurrentRoom(
+                    socket,
+                    true
+                );
+            }
+        );
+
+
+        /* =================================================
+           DISCONNECT
+        ================================================= */
+
+        socket.on(
+            "disconnect",
+            reason => {
+
+                console.log(
+                    "[DISCONNECT]",
+                    socket.id,
+                    reason
+                );
+
+
+                leaveCurrentRoom(
+                    socket,
+                    true
+                );
+            }
+        );
+    }
+);
+
+
+/* =====================================================
+   LEAVE CURRENT ROOM
+===================================================== */
+
+function leaveCurrentRoom(
+    socket,
+    notify
+) {
+
+    const code =
+        socket.data.roomCode;
+
+
+    if (!code) {
+        return;
+    }
+
+
+    const room =
+        rooms.get(
             code
         );
 
-        callback({
 
-            ok:true,
+    socket.leave(
+        code
+    );
 
-            code,
 
-            playerId:
-                socket.id,
+    socket.data.roomCode =
+        null;
 
-            isHost:false
-        });
 
-        socket
-            .to(code)
-            .emit(
-                "playerJoined",
-                {
-                    playerId:
-                        socket.id
-                }
-            );
+    socket.data.isHost =
+        false;
 
-        io
-            .to(code)
-            .emit(
-                "roomPlayers",
-                {
-                    count:
-                        room.players.size
-                }
-            );
-    });
 
-    /* =================================================
-       START MATCH
-    ================================================= */
+    if (!room) {
+        return;
+    }
 
-    socket.on(
-    "startMatch",
-    ()=>{
 
-        const room =
-            getSocketRoom(
-                socket
-            );
+    const wasHost =
+        room.host ===
+        socket.id;
 
-        if(!room){
-            return;
-        }
 
-        if(
-            room.host !==
-            socket.id
-        ){
-            return;
-        }
+    room.players.delete(
+        socket.id
+    );
 
-        if(
-            room.players.size <
-            MAX_PLAYERS_PER_ROOM
-        ){
 
-            socket.emit(
-                "startError",
-                {
-                    message:
-                        "Waiting for Player 2."
-                }
-            );
+    room.playerStates.delete(
+        socket.id
+    );
 
-            return;
-        }
 
-        room.started=true;
+    /*
+    Si el Host se DESCONECTA de Internet
+    o abandona completamente la sala,
+    no existe otro dispositivo que pueda
+    seguir ejecutando la IA.
 
-        /*
-        Reiniciamos vida de ambos.
-        */
+    Esto es diferente a MORIR.
 
-        for(
-            const playerId
-            of room.players
-        ){
+    Morir dentro del juego NO cierra
+    la sala.
+    */
 
-            const isPlayerHost =
-                playerId ===
-                room.host;
+    if (wasHost) {
 
-            room.playerStates.set(
-                playerId,
-                createInitialPlayerState(
-                    isPlayerHost
-                )
-            );
-        }
+        if (notify) {
 
-        room.worldState={
-            wave:0,
-            score:0,
-            enemiesToSpawn:0,
-            zombies:[]
-        };
-
-        console.log(
-            "[MATCH STARTED]",
-            room.code
-        );
-
-        io
-            .to(room.code)
-            .emit(
-                "matchStarted",
-                {
-                    roomCode:
-                        room.code,
-
-                    hostId:
-                        room.host,
-
-                    worldWidth:
-                        WORLD_W,
-
-                    worldHeight:
-                        WORLD_H
-                }
-            );
-    });
-
-    /* =================================================
-       PLAYER STATE
-    ================================================= */
-
-    socket.on(
-    "playerState",
-    data=>{
-
-        const room =
-            getSocketRoom(
-                socket
-            );
-
-        if(
-            !room ||
-            !room.started
-        ){
-            return;
-        }
-
-        const movement =
-            sanitizePlayerState(
-                data
-            );
-
-        let current =
-            room.playerStates.get(
-                socket.id
-            );
-
-        if(!current){
-
-            current =
-                createInitialPlayerState(
-                    socket.id ===
-                    room.host
-                );
-        }
-
-        /*
-        IMPORTANTE:
-
-        Aceptamos posición/rotación/arma.
-
-        NO aceptamos health/dead enviados
-        por el navegador como autoridad.
-
-        De esa forma Player 2 no puede
-        volver accidentalmente a 100 HP
-        después de que el Host lo dañó.
-        */
-
-        current.x=
-            movement.x;
-
-        current.y=
-            movement.y;
-
-        current.rotation=
-            movement.rotation;
-
-        current.weaponIndex=
-            movement.weaponIndex;
-
-        room.playerStates.set(
-            socket.id,
-            current
-        );
-
-        socket
-            .to(room.code)
-            .emit(
-                "remotePlayerState",
-                {
-                    id:
-                        socket.id,
-
-                    x:
-                        current.x,
-
-                    y:
-                        current.y,
-
-                    rotation:
-                        current.rotation,
-
-                    health:
-                        current.health,
-
-                    weaponIndex:
-                        current.weaponIndex,
-
-                    dead:
-                        current.dead
-                }
-            );
-    });
-
-    /* =================================================
-       WEAPON CHANGE
-    ================================================= */
-
-    socket.on(
-    "weaponChanged",
-    data=>{
-
-        const room =
-            getSocketRoom(
-                socket
-            );
-
-        if(!room){
-            return;
-        }
-
-        const index =
-            Math.floor(
-                safeNumber(
-                    data?.weaponIndex,
-                    0,
-                    0,
-                    3
-                )
-            );
-
-        const state =
-            room.playerStates.get(
-                socket.id
-            );
-
-        if(state){
-
-            state.weaponIndex=
-                index;
-
-            room.playerStates.set(
-                socket.id,
-                state
-            );
-        }
-
-        socket
-            .to(room.code)
-            .emit(
-                "remoteWeaponChanged",
-                {
-                    id:
-                        socket.id,
-
-                    weaponIndex:
-                        index
-                }
-            );
-    });
-
-    /* =================================================
-       SHOOT
-    ================================================= */
-
-    socket.on(
-    "shoot",
-    data=>{
-
-        const room =
-            getSocketRoom(
-                socket
-            );
-
-        if(
-            !room ||
-            !room.started
-        ){
-            return;
-        }
-
-        const state =
-            room.playerStates.get(
-                socket.id
-            );
-
-        if(!state || state.dead){
-            return;
-        }
-
-        data =
-            data &&
-            typeof data==="object"
-            ?data
-            :{};
-
-        /*
-        Usamos la posición conocida del
-        jugador como origen.
-
-        No confiamos totalmente en x/y
-        enviados específicamente en shoot.
-        */
-
-        const shot={
-
-            id:
-                socket.id,
-
-            x:
-                state.x,
-
-            y:
-                state.y,
-
-            rotation:
-                safeNumber(
-                    data.rotation,
-                    state.rotation,
-                    -Math.PI*4,
-                    Math.PI*4
-                ),
-
-            weaponIndex:
-                Math.floor(
-                    safeNumber(
-                        data.weaponIndex,
-                        state.weaponIndex,
-                        0,
-                        3
-                    )
-                )
-        };
-
-        state.rotation=
-            shot.rotation;
-
-        state.weaponIndex=
-            shot.weaponIndex;
-
-        socket
-            .to(room.code)
-            .emit(
-                "remoteShoot",
-                shot
-            );
-    });
-
-    /* =================================================
-       AUTHORITATIVE HEALTH
-       HOST -> SERVER -> PLAYERS
-    ================================================= */
-
-    socket.on(
-    "authoritativeHealth",
-    data=>{
-
-        const room =
-            getSocketRoom(
-                socket
-            );
-
-        if(
-            !room ||
-            !room.started
-        ){
-            return;
-        }
-
-        /*
-        SOLAMENTE EL HOST puede
-        modificar vida.
-        */
-
-        if(
-            room.host !==
-            socket.id
-        ){
-            return;
-        }
-
-        data =
-            data &&
-            typeof data==="object"
-            ?data
-            :{};
-
-        const target =
-            data.target === "client"
-            ?"client"
-            :"host";
-
-        let targetId;
-
-        if(
-            target==="host"
-        ){
-
-            targetId=
-                room.host;
-
-        }else{
-
-            targetId=
-                getClientId(
-                    room
-                );
-        }
-
-        if(!targetId){
-            return;
-        }
-
-        const state =
-            room.playerStates.get(
-                targetId
-            );
-
-        if(!state){
-            return;
-        }
-
-        const health =
-            safeNumber(
-                data.health,
-                state.health,
-                0,
-                100
-            );
-
-        state.health=
-            health;
-
-        state.dead=
-            health<=0 ||
-            Boolean(
-                data.dead
-            );
-
-        room.playerStates.set(
-            targetId,
-            state
-        );
-
-        /*
-        Todos reciben el resultado,
-        incluido el Host.
-        */
-
-        io
-            .to(room.code)
-            .emit(
-                "authoritativeHealth",
-                {
-                    target,
-                    health:
-                        state.health,
-
-                    dead:
-                        state.dead
-                }
-            );
-    });
-
-    /* =================================================
-       WORLD STATE
-       HOST -> SERVER -> CLIENT
-    ================================================= */
-
-    socket.on(
-    "worldState",
-    data=>{
-
-        const room =
-            getSocketRoom(
-                socket
-            );
-
-        if(
-            !room ||
-            !room.started
-        ){
-            return;
-        }
-
-        /*
-        Solamente Host.
-        */
-
-        if(
-            room.host !==
-            socket.id
-        ){
-            return;
-        }
-
-        data =
-            data &&
-            typeof data==="object"
-            ?data
-            :{};
-
-        const worldState={
-
-            wave:
-                Math.floor(
-                    safeNumber(
-                        data.wave,
-                        0,
-                        0,
-                        10000
-                    )
-                ),
-
-            score:
-                Math.floor(
-                    safeNumber(
-                        data.score,
-                        0,
-                        0,
-                        999999999
-                    )
-                ),
-
-            enemiesToSpawn:
-                Math.floor(
-                    safeNumber(
-                        data.enemiesToSpawn,
-                        0,
-                        0,
-                        10000
-                    )
-                ),
-
-            zombies:
-                sanitizeZombies(
-                    data.zombies
-                )
-        };
-
-        room.worldState=
-            worldState;
-
-        /*
-        Solo necesitamos enviarlo al Client.
-        El Host ya tiene estos datos.
-        */
-
-        socket
-            .to(room.code)
-            .emit(
-                "worldState",
-                worldState
-            );
-    });
-
-    /* =================================================
-       LEAVE
-    ================================================= */
-
-    socket.on(
-    "leaveRoom",
-    callback=>{
-
-        removePlayerFromRoom(
             socket
-        );
-
-        if(
-            typeof callback ===
-            "function"
-        ){
-
-            callback({
-                ok:true
-            });
-        }
-    });
-
-    /* =================================================
-       DISCONNECT
-    ================================================= */
-
-    socket.on(
-    "disconnect",
-    reason=>{
-
-        console.log(
-            "[DISCONNECTED]",
-            socket.id,
-            reason
-        );
-
-        removePlayerFromRoom(
-            socket,
-            true
-        );
-    });
-});
-
-/* =====================================================
-   CLEAN OLD ROOMS
-===================================================== */
-
-setInterval(
-()=>{
-
-    const now=
-        Date.now();
-
-    const MAX_ROOM_AGE=
-        1000*
-        60*
-        60*
-        6;
-
-    for(
-        const [
-            code,
-            room
-        ]
-        of rooms
-    ){
-
-        if(
-            room.players.size===0
-        ){
-
-            rooms.delete(code);
-
-            continue;
-        }
-
-        if(
-            now-
-            room.createdAt
-            >
-            MAX_ROOM_AGE
-        ){
-
-            io
                 .to(code)
                 .emit(
                     "roomClosed"
                 );
-
-            rooms.delete(code);
-
-            console.log(
-                "[OLD ROOM REMOVED]",
-                code
-            );
         }
+
+
+        rooms.delete(
+            code
+        );
+
+
+        console.log(
+            "[ROOM CLOSED]",
+            code
+        );
+
+
+        return;
     }
 
-},
-1000*60*10
+
+    /*
+    Se fue Player 2.
+    */
+
+    if (notify) {
+
+        socket
+            .to(code)
+            .emit(
+                "playerLeft"
+            );
+    }
+
+
+    emitPlayerCount(
+        room
+    );
+
+
+    console.log(
+        "[PLAYER LEFT]",
+        code,
+        socket.id
+    );
+}
+
+
+/* =====================================================
+   OLD ROOM CLEANUP
+===================================================== */
+
+setInterval(
+    () => {
+
+        const now =
+            Date.now();
+
+
+        for (
+            const [
+                code,
+                room
+            ]
+            of rooms
+        ) {
+
+            if (
+                now -
+                room.createdAt
+                >
+                ROOM_MAX_AGE
+            ) {
+
+                io.to(code)
+                    .emit(
+                        "roomClosed"
+                    );
+
+
+                rooms.delete(
+                    code
+                );
+
+
+                console.log(
+                    "[OLD ROOM REMOVED]",
+                    code
+                );
+            }
+        }
+
+    },
+    1000 * 60 * 10
 );
+
 
 /* =====================================================
    SERVER START
 ===================================================== */
 
-httpServer.listen(
-PORT,
-"0.0.0.0",
-()=>{
+server.listen(
+    PORT,
+    "0.0.0.0",
+    () => {
 
-    console.log("");
-    console.log(
-        "======================================"
-    );
+        console.log(
+            "===================================="
+        );
 
-    console.log(
-        " DEAD ROOMS MULTIPLAYER SERVER V2"
-    );
+        console.log(
+            " DEAD ROOMS MOBILE SERVER V3"
+        );
 
-    console.log(
-        "======================================"
-    );
+        console.log(
+            " Port:",
+            PORT
+        );
 
-    console.log(
-        "Port:",
-        PORT
-    );
+        console.log(
+            " World:",
+            WORLD_W,
+            "x",
+            WORLD_H
+        );
 
-    console.log(
-        "World:",
-        WORLD_W+"x"+WORLD_H
-    );
+        console.log(
+            " Multiplayer: ENABLED"
+        );
 
-    console.log(
-        "Multiplayer: ENABLED"
-    );
-
-    console.log(
-        "Players per room:",
-        MAX_PLAYERS_PER_ROOM
-    );
-
-    console.log(
-        `Local: http://localhost:${PORT}`
-    );
-
-    console.log(
-        "======================================"
-    );
-
-    console.log("");
-});
+        console.log(
+            "===================================="
+        );
+    }
+);
