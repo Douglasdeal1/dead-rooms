@@ -2,8 +2,11 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Dead Rooms Mobile Multiplayer</title>
+<meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
+>
+<title>Dead Rooms Mobile</title>
 
 <style>
 *{
@@ -20,7 +23,7 @@ html,body{
     height:100%;
     overflow:hidden;
     background:#080a09;
-    color:white;
+    color:#fff;
     font-family:Arial,Helvetica,sans-serif;
     touch-action:none;
 }
@@ -31,10 +34,16 @@ html,body{
     width:100%;
     height:100%;
     display:block;
-    background:#292e2a;
+    background:#111512;
 }
 
-.hidden{display:none!important}
+.hidden{
+    display:none!important;
+}
+
+/* ================================
+   MENUS
+================================ */
 
 .overlay{
     position:fixed;
@@ -44,11 +53,18 @@ html,body{
     align-items:center;
     justify-content:center;
     padding:20px;
-    background:radial-gradient(circle at center,rgba(45,55,47,.75),rgba(4,6,5,.97));
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(45,55,47,.78),
+            rgba(4,6,5,.97)
+        );
 }
 
 .panel{
     width:min(90vw,500px);
+    max-height:92vh;
+    overflow:auto;
     padding:30px;
     text-align:center;
     border-radius:20px;
@@ -63,10 +79,14 @@ html,body{
     letter-spacing:-4px;
     font-weight:900;
     color:#deded8;
-    text-shadow:0 5px 0 #555,0 10px 30px black;
+    text-shadow:
+        0 5px 0 #555,
+        0 10px 30px #000;
 }
 
-.logo span{color:#b33333}
+.logo span{
+    color:#b33333;
+}
 
 .subtitle{
     margin-top:18px;
@@ -82,9 +102,14 @@ html,body{
     border-radius:10px;
     border:1px solid #4a504b;
     background:#292e2a;
-    color:white;
+    color:#fff;
     font-size:17px;
     font-weight:900;
+    touch-action:manipulation;
+}
+
+.menuButton:active{
+    transform:scale(.98);
 }
 
 .menuButton.primary{
@@ -107,7 +132,7 @@ html,body{
     border:1px solid #4a504b;
     outline:none;
     background:#1d211e;
-    color:white;
+    color:#fff;
     text-align:center;
     text-transform:uppercase;
     font-size:26px;
@@ -136,8 +161,17 @@ html,body{
     font-size:12px;
 }
 
-.status.good{color:#6bd181}
-.status.bad{color:#dc6565}
+.status.good{
+    color:#6bd181;
+}
+
+.status.bad{
+    color:#dc6565;
+}
+
+/* ================================
+   HUD
+================================ */
 
 #hud{
     position:fixed;
@@ -148,12 +182,13 @@ html,body{
 
 #playerHUD{
     position:absolute;
-    left:12px;
-    top:12px;
-    width:210px;
-    padding:10px 12px;
+    left:max(10px,env(safe-area-inset-left));
+    top:max(10px,env(safe-area-inset-top));
+    width:min(210px,52vw);
+    padding:9px 11px;
     border-radius:10px;
-    background:rgba(5,7,6,.75);
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(5,7,6,.76);
 }
 
 #healthBackground{
@@ -168,11 +203,12 @@ html,body{
     width:100%;
     height:100%;
     background:#ba3434;
+    transition:width .12s linear;
 }
 
 #ammoText{
     margin-top:6px;
-    font-size:19px;
+    font-size:18px;
     font-weight:900;
 }
 
@@ -184,58 +220,85 @@ html,body{
 
 #centerHUD{
     position:absolute;
-    top:12px;
+    top:max(10px,env(safe-area-inset-top));
     left:50%;
     transform:translateX(-50%);
     text-align:center;
+    text-shadow:0 2px 5px #000;
 }
 
 #waveText{
-    font-size:18px;
+    font-size:17px;
     font-weight:900;
 }
 
 #enemyText{
-    font-size:10px;
+    margin-top:2px;
     color:#b7bdb9;
+    font-size:10px;
 }
 
 #scoreText{
     position:absolute;
-    top:15px;
-    right:15px;
+    top:max(12px,env(safe-area-inset-top));
+    right:max(12px,env(safe-area-inset-right));
     font-size:17px;
     font-weight:900;
 }
 
 #message{
     position:absolute;
-    top:34%;
+    top:30%;
     left:50%;
     transform:translate(-50%,-50%);
-    font-size:clamp(30px,8vw,60px);
+    width:90%;
+    text-align:center;
+    font-size:clamp(26px,7vw,55px);
     font-weight:900;
+    text-shadow:0 5px 20px #000;
     opacity:0;
+    transition:opacity .2s;
 }
 
 #onlineIndicator{
     position:absolute;
-    left:12px;
-    top:82px;
-    padding:6px 9px;
+    left:max(10px,env(safe-area-inset-left));
+    top:79px;
+    padding:5px 8px;
     border-radius:8px;
     background:rgba(5,7,6,.78);
     color:#70d887;
-    font-size:10px;
+    font-size:9px;
     font-weight:900;
 }
 
 #roomHUD{
     position:absolute;
-    left:12px;
-    top:109px;
+    left:max(10px,env(safe-area-inset-left));
+    top:105px;
+    color:#aeb5b0;
     font-size:9px;
 }
+
+#deadIndicator{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    padding:15px 24px;
+    border-radius:12px;
+    background:rgba(20,0,0,.78);
+    border:1px solid rgba(210,60,60,.55);
+    color:#fff;
+    font-size:clamp(24px,7vw,48px);
+    font-weight:900;
+    text-align:center;
+    text-shadow:0 3px 10px #000;
+}
+
+/* ================================
+   CONTROLS
+================================ */
 
 #controls{
     position:fixed;
@@ -246,9 +309,8 @@ html,body{
 
 .joystick{
     position:absolute;
-    bottom:22px;
-    width:130px;
-    height:130px;
+    width:126px;
+    height:126px;
     border-radius:50%;
     background:rgba(255,255,255,.055);
     border:2px solid rgba(255,255,255,.14);
@@ -256,15 +318,23 @@ html,body{
     touch-action:none;
 }
 
-#moveJoystick{left:22px}
-#aimJoystick{right:22px}
+#moveJoystick{
+    left:max(18px,env(safe-area-inset-left));
+    bottom:max(18px,env(safe-area-inset-bottom));
+}
+
+#aimJoystick{
+    right:max(18px,env(safe-area-inset-right));
+    bottom:max(18px,env(safe-area-inset-bottom));
+}
 
 .joystickLabel{
     position:absolute;
+    left:0;
     top:50%;
     width:100%;
-    text-align:center;
     transform:translateY(-50%);
+    text-align:center;
     color:rgba(255,255,255,.25);
     font-size:9px;
 }
@@ -273,12 +343,14 @@ html,body{
     position:absolute;
     left:50%;
     top:50%;
-    width:54px;
-    height:54px;
-    margin-left:-27px;
-    margin-top:-27px;
+    width:52px;
+    height:52px;
+    margin-left:-26px;
+    margin-top:-26px;
     border-radius:50%;
     background:rgba(255,255,255,.22);
+    border:2px solid rgba(255,255,255,.2);
+    pointer-events:none;
 }
 
 .action{
@@ -288,33 +360,90 @@ html,body{
     justify-content:center;
     border-radius:50%;
     border:2px solid rgba(255,255,255,.15);
-    background:rgba(30,35,31,.8);
-    color:white;
+    background:rgba(30,35,31,.82);
+    color:#fff;
     font-weight:900;
     pointer-events:auto;
+    touch-action:manipulation;
 }
 
 #changeWeapon{
     width:58px;
     height:58px;
-    right:165px;
-    bottom:28px;
+    right:max(158px,calc(env(safe-area-inset-right) + 158px));
+    bottom:max(22px,env(safe-area-inset-bottom));
     font-size:22px;
 }
 
 #reload{
     width:52px;
     height:52px;
-    right:172px;
-    bottom:98px;
+    right:max(166px,calc(env(safe-area-inset-right) + 166px));
+    bottom:max(91px,calc(env(safe-area-inset-bottom) + 91px));
     font-size:9px;
 }
 
 #pauseButton{
     width:42px;
     height:42px;
-    top:55px;
-    right:15px;
+    top:max(53px,calc(env(safe-area-inset-top) + 53px));
+    right:max(13px,env(safe-area-inset-right));
+    font-size:15px;
+}
+
+/* ================================
+   PORTRAIT
+================================ */
+
+@media (orientation:portrait){
+
+    #centerHUD{
+        top:94px;
+    }
+
+    #scoreText{
+        top:68px;
+    }
+
+    .joystick{
+        width:112px;
+        height:112px;
+    }
+
+    .knob{
+        width:48px;
+        height:48px;
+        margin-left:-24px;
+        margin-top:-24px;
+    }
+
+    #moveJoystick{
+        left:12px;
+        bottom:18px;
+    }
+
+    #aimJoystick{
+        right:12px;
+        bottom:18px;
+    }
+
+    #changeWeapon{
+        right:132px;
+        bottom:24px;
+        width:52px;
+        height:52px;
+    }
+
+    #reload{
+        right:136px;
+        bottom:87px;
+        width:48px;
+        height:48px;
+    }
+
+    #playerHUD{
+        width:185px;
+    }
 }
 </style>
 </head>
@@ -323,291 +452,596 @@ html,body{
 
 <canvas id="game"></canvas>
 
+<!-- HUD -->
 <div id="hud" class="hidden">
 
-<div id="playerHUD">
+    <div id="playerHUD">
+        <div id="healthBackground">
+            <div id="healthBar"></div>
+        </div>
 
-<div id="healthBackground">
-<div id="healthBar"></div>
+        <div id="ammoText">
+            12 / 120
+        </div>
+
+        <div id="weaponText">
+            PISTOL
+        </div>
+    </div>
+
+    <div id="centerHUD">
+        <div id="waveText">
+            WAVE 1
+        </div>
+
+        <div id="enemyText">
+            0 ENEMIES
+        </div>
+    </div>
+
+    <div id="scoreText">
+        0
+    </div>
+
+    <div id="message"></div>
+
+    <div id="onlineIndicator" class="hidden">
+        🟢 ONLINE
+    </div>
+
+    <div id="roomHUD" class="hidden"></div>
+
+    <div id="deadIndicator" class="hidden">
+        YOU DIED
+    </div>
+
 </div>
 
-<div id="ammoText">12 / 120</div>
-<div id="weaponText">PISTOL</div>
 
-</div>
-
-<div id="centerHUD">
-<div id="waveText">WAVE 1</div>
-<div id="enemyText">0 ENEMIES</div>
-</div>
-
-<div id="scoreText">0</div>
-<div id="message"></div>
-
-<div id="onlineIndicator" class="hidden">
-🟢 ONLINE
-</div>
-
-<div id="roomHUD" class="hidden"></div>
-
-</div>
-
-
+<!-- CONTROLS -->
 <div id="controls" class="hidden">
 
-<div id="moveJoystick" class="joystick">
-<div class="joystickLabel">MOVE</div>
-<div id="moveKnob" class="knob"></div>
+    <div id="moveJoystick" class="joystick">
+
+        <div class="joystickLabel">
+            MOVE
+        </div>
+
+        <div id="moveKnob" class="knob"></div>
+
+    </div>
+
+    <div id="aimJoystick" class="joystick">
+
+        <div class="joystickLabel">
+            AIM / FIRE
+        </div>
+
+        <div id="aimKnob" class="knob"></div>
+
+    </div>
+
+    <div id="changeWeapon" class="action">
+        ⇄
+    </div>
+
+    <div id="reload" class="action">
+        RELOAD
+    </div>
+
+    <div id="pauseButton" class="action">
+        II
+    </div>
+
 </div>
 
-<div id="aimJoystick" class="joystick">
-<div class="joystickLabel">AIM / FIRE</div>
-<div id="aimKnob" class="knob"></div>
-</div>
 
-<div id="changeWeapon" class="action">⇄</div>
-<div id="reload" class="action">RELOAD</div>
-<div id="pauseButton" class="action">II</div>
-
-</div>
-
-
+<!-- MAIN MENU -->
 <div id="mainMenu" class="overlay">
 
-<div class="panel">
+    <div class="panel">
 
-<div class="logo">
-DEAD<br><span>ROOMS</span>
-</div>
+        <div class="logo">
+            DEAD<br>
+            <span>ROOMS</span>
+        </div>
 
-<div class="subtitle">
-MOBILE ZOMBIE ARENA
-</div>
+        <div class="subtitle">
+            MOBILE ZOMBIE ARENA
+        </div>
 
-<button id="playButton" class="menuButton primary">
-SOLO
-</button>
+        <button
+            id="playButton"
+            class="menuButton primary"
+        >
+            SOLO
+        </button>
 
-<button id="multiplayerButton" class="menuButton">
-MULTIPLAYER
-</button>
+        <button
+            id="multiplayerButton"
+            class="menuButton"
+        >
+            MULTIPLAYER
+        </button>
 
-<div class="instructions">
-Joystick izquierdo: moverse<br>
-Joystick derecho: apuntar y disparar<br>
-⇄ cambiar arma<br>
-RELOAD recargar
-</div>
+        <div class="instructions">
+            Joystick izquierdo: moverse<br>
+            Joystick derecho: apuntar y disparar<br>
+            ⇄ cambiar arma · RELOAD recargar
+        </div>
 
-</div>
-</div>
-
-
-<div id="multiplayerMenu" class="overlay hidden">
-
-<div class="panel">
-
-<div class="logo" style="font-size:44px">
-MULTI<span>PLAYER</span>
-</div>
-
-<button id="createRoomButton" class="menuButton primary">
-CREATE ROOM
-</button>
-
-<input
-id="roomInput"
-class="roomInput"
-maxlength="5"
-placeholder="CODE">
-
-<button id="joinRoomButton" class="menuButton">
-JOIN ROOM
-</button>
-
-<button id="multiplayerBackButton" class="menuButton">
-BACK
-</button>
-
-<div id="connectionStatus" class="status">
-Connecting to server...
-</div>
+    </div>
 
 </div>
-</div>
 
 
-<div id="lobbyMenu" class="overlay hidden">
+<!-- MULTIPLAYER -->
+<div
+    id="multiplayerMenu"
+    class="overlay hidden"
+>
 
-<div class="panel">
+    <div class="panel">
 
-<div class="logo" style="font-size:45px">
-ROOM
-</div>
+        <div
+            class="logo"
+            style="font-size:44px"
+        >
+            MULTI<span>PLAYER</span>
+        </div>
 
-<div id="roomCode" class="roomCode">
------
-</div>
+        <div class="subtitle">
+            PLAY WITH A FRIEND
+        </div>
 
-<div id="lobbyStatus" class="instructions">
-Waiting for another player...
-</div>
+        <button
+            id="createRoomButton"
+            class="menuButton primary"
+        >
+            CREATE ROOM
+        </button>
 
-<button id="startOnlineButton"
-class="menuButton primary hidden">
-START GAME
-</button>
+        <input
+            id="roomInput"
+            class="roomInput"
+            maxlength="5"
+            placeholder="CODE"
+        >
 
-<button id="leaveLobbyButton"
-class="menuButton">
-LEAVE ROOM
-</button>
+        <button
+            id="joinRoomButton"
+            class="menuButton"
+        >
+            JOIN ROOM
+        </button>
 
-</div>
-</div>
+        <button
+            id="multiplayerBackButton"
+            class="menuButton"
+        >
+            BACK
+        </button>
 
+        <div
+            id="connectionStatus"
+            class="status"
+        >
+            Connecting to server...
+        </div>
 
-<div id="pauseMenu" class="overlay hidden">
+    </div>
 
-<div class="panel">
-
-<div class="logo" style="font-size:45px">
-PAUSED
-</div>
-
-<button id="continueButton" class="menuButton">
-CONTINUE
-</button>
-
-<button id="pauseMenuButton" class="menuButton">
-MAIN MENU
-</button>
-
-</div>
 </div>
 
 
-<div id="gameOverMenu" class="overlay hidden">
+<!-- LOBBY -->
+<div
+    id="lobbyMenu"
+    class="overlay hidden"
+>
 
-<div class="panel">
+    <div class="panel">
 
-<div class="logo" style="font-size:42px">
-GAME <span>OVER</span>
+        <div
+            class="logo"
+            style="font-size:45px"
+        >
+            ROOM
+        </div>
+
+        <div class="subtitle">
+            SHARE THIS CODE
+        </div>
+
+        <div
+            id="roomCode"
+            class="roomCode"
+        >
+            -----
+        </div>
+
+        <div
+            id="lobbyStatus"
+            class="instructions"
+        >
+            Waiting for another player...
+        </div>
+
+        <button
+            id="startOnlineButton"
+            class="menuButton primary hidden"
+        >
+            START GAME
+        </button>
+
+        <button
+            id="leaveLobbyButton"
+            class="menuButton"
+        >
+            LEAVE ROOM
+        </button>
+
+    </div>
+
 </div>
 
-<div id="finalScore"
-style="margin:22px;font-size:34px;font-weight:900;color:#d8b557">
-0 POINTS
+
+<!-- PAUSE -->
+<div
+    id="pauseMenu"
+    class="overlay hidden"
+>
+
+    <div class="panel">
+
+        <div
+            class="logo"
+            style="font-size:45px"
+        >
+            PAUSED
+        </div>
+
+        <button
+            id="continueButton"
+            class="menuButton"
+        >
+            CONTINUE
+        </button>
+
+        <button
+            id="pauseMenuButton"
+            class="menuButton"
+        >
+            MAIN MENU
+        </button>
+
+    </div>
+
 </div>
 
-<button id="restartButton" class="menuButton">
-PLAY AGAIN
-</button>
 
-<button id="gameOverMenuButton" class="menuButton">
-MAIN MENU
-</button>
+<!-- GAME OVER -->
+<div
+    id="gameOverMenu"
+    class="overlay hidden"
+>
 
-</div>
+    <div class="panel">
+
+        <div
+            class="logo"
+            style="font-size:42px"
+        >
+            GAME <span>OVER</span>
+        </div>
+
+        <div
+            id="finalScore"
+            style="
+                margin:22px;
+                font-size:34px;
+                font-weight:900;
+                color:#d8b557
+            "
+        >
+            0 POINTS
+        </div>
+
+        <button
+            id="restartButton"
+            class="menuButton"
+        >
+            PLAY AGAIN
+        </button>
+
+        <button
+            id="gameOverMenuButton"
+            class="menuButton"
+        >
+            MAIN MENU
+        </button>
+
+    </div>
+
 </div>
 
 
 <script src="/socket.io/socket.io.js"></script>
 
 <script>
-
 (()=>{
 
 "use strict";
 
-/* ==================================================
-   WORLD
-================================================== */
+/* =====================================================
+   CONSTANT WORLD
 
-/*
-MUY IMPORTANTE:
-
-El mundo ya NO depende del tamaño del celular.
-
-Los dos jugadores utilizan exactamente:
-1280 x 720.
-
-Después escalamos visualmente el Canvas.
-*/
+   Nunca cambia entre celulares.
+===================================================== */
 
 const WORLD_W=1280;
 const WORLD_H=720;
 
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
+const canvas=
+    document.getElementById("game");
 
-const $=id=>document.getElementById(id);
+const ctx=
+    canvas.getContext("2d");
+
+const $=
+    id=>document.getElementById(id);
+
+
+/* =====================================================
+   DISPLAY / CAMERA
+===================================================== */
 
 let screenW=innerWidth;
 let screenH=innerHeight;
 
-let worldScale=1;
-let offsetX=0;
-let offsetY=0;
+let dpr=1;
+
+let camera={
+    x:WORLD_W/2,
+    y:WORLD_H/2,
+    zoom:1,
+    viewW:WORLD_W,
+    viewH:WORLD_H
+};
+
 
 function resizeCanvas(){
 
-    const dpr=Math.min(
-        devicePixelRatio||1,
-        2
-    );
+    dpr=
+        Math.min(
+            window.devicePixelRatio||1,
+            2
+        );
 
-    screenW=innerWidth;
-    screenH=innerHeight;
+    screenW=
+        window.innerWidth;
 
-    canvas.width=screenW*dpr;
-    canvas.height=screenH*dpr;
+    screenH=
+        window.innerHeight;
 
-    canvas.style.width=screenW+"px";
-    canvas.style.height=screenH+"px";
+    canvas.width=
+        Math.round(
+            screenW*dpr
+        );
+
+    canvas.height=
+        Math.round(
+            screenH*dpr
+        );
+
+    canvas.style.width=
+        screenW+"px";
+
+    canvas.style.height=
+        screenH+"px";
 
     ctx.setTransform(
-        dpr,0,0,dpr,0,0
+        dpr,
+        0,
+        0,
+        dpr,
+        0,
+        0
     );
-
-    worldScale=Math.min(
-        screenW/WORLD_W,
-        screenH/WORLD_H
-    );
-
-    offsetX=
-        (screenW-WORLD_W*worldScale)/2;
-
-    offsetY=
-        (screenH-WORLD_H*worldScale)/2;
 }
 
-resizeCanvas();
 
-addEventListener(
+function updateCamera(){
+
+    /*
+    Horizontal:
+    vemos prácticamente todo el mapa.
+
+    Vertical:
+    acercamos la cámara y seguimos
+    al jugador.
+    */
+
+    const portrait=
+        screenH>screenW;
+
+    if(portrait){
+
+        camera.viewW=650;
+
+        camera.viewH=
+            camera.viewW*
+            (
+                screenH/
+                screenW
+            );
+
+        /*
+        Nunca necesitamos mostrar más
+        altura que el mundo.
+        */
+
+        if(
+            camera.viewH>
+            WORLD_H
+        ){
+
+            camera.viewH=
+                WORLD_H;
+
+            camera.viewW=
+                camera.viewH*
+                (
+                    screenW/
+                    screenH
+                );
+        }
+
+    }else{
+
+        camera.viewW=
+            WORLD_W;
+
+        camera.viewH=
+            WORLD_H;
+    }
+
+
+    const target=
+        player &&
+        !player.dead
+        ?
+        player
+        :
+        (
+            remotePlayer &&
+            !remotePlayer.dead
+            ?
+            remotePlayer
+            :
+            player
+        );
+
+
+    if(target){
+
+        camera.x=
+            target.x;
+
+        camera.y=
+            target.y;
+
+    }else{
+
+        camera.x=
+            WORLD_W/2;
+
+        camera.y=
+            WORLD_H/2;
+    }
+
+
+    camera.x=
+        clamp(
+            camera.x,
+            camera.viewW/2,
+            WORLD_W-
+            camera.viewW/2
+        );
+
+    camera.y=
+        clamp(
+            camera.y,
+            camera.viewH/2,
+            WORLD_H-
+            camera.viewH/2
+        );
+
+
+    camera.zoom=
+        Math.min(
+            screenW/
+            camera.viewW,
+
+            screenH/
+            camera.viewH
+        );
+}
+
+
+window.addEventListener(
     "resize",
-    resizeCanvas
+    ()=>{
+
+        resizeCanvas();
+
+        updateCamera();
+    }
 );
 
 
-/* ==================================================
-   HELPERS
-================================================== */
+window.addEventListener(
+    "orientationchange",
+    ()=>{
 
-function clamp(v,min,max){
+        setTimeout(
+            ()=>{
+
+                resizeCanvas();
+
+                updateCamera();
+
+            },
+            150
+        );
+    }
+);
+
+
+resizeCanvas();
+
+
+/* =====================================================
+   HELPERS
+===================================================== */
+
+function clamp(
+    value,
+    minimum,
+    maximum
+){
 
     return Math.max(
-        min,
-        Math.min(max,v)
+        minimum,
+        Math.min(
+            maximum,
+            value
+        )
     );
 }
 
-function rand(a,b){
 
-    return Math.random()*(b-a)+a;
+function random(
+    minimum,
+    maximum
+){
+
+    return (
+        Math.random()*
+        (
+            maximum-
+            minimum
+        )
+        +
+        minimum
+    );
 }
 
-function distance(a,b){
+
+function distance(
+    a,
+    b
+){
 
     return Math.hypot(
         a.x-b.x,
@@ -616,228 +1050,303 @@ function distance(a,b){
 }
 
 
-/* ==================================================
-   STATE
-================================================== */
+/* =====================================================
+   GAME STATE
+===================================================== */
 
 let running=false;
+
 let paused=false;
 
 let multiplayer=false;
+
 let isHost=false;
 
 let currentRoom=null;
 
+let connectedPlayers=1;
+
 let player=null;
+
 let remotePlayer=null;
 
 let zombies=[];
+
 let bullets=[];
+
 let walls=[];
 
 let wave=0;
+
 let score=0;
 
 let enemiesToSpawn=0;
 
 let spawnTimer=0;
+
 let nextWaveTimer=1;
 
 let lastTime=0;
 
 let playerNetworkTimer=0;
-let zombieNetworkTimer=0;
 
-let connectedPlayers=1;
+let worldNetworkTimer=0;
+
+let gameOverTriggered=false;
 
 
-/* ==================================================
+/* =====================================================
    WEAPONS
-================================================== */
+===================================================== */
 
 const WEAPONS=[
 
-{
-    name:"PISTOL",
-    damage:40,
-    rate:250,
-    speed:900,
-    spread:.02,
-    pellets:1,
-    magazine:12,
-    reserve:120
-},
+    {
+        name:"PISTOL",
+        damage:40,
+        rate:250,
+        speed:900,
+        spread:.02,
+        pellets:1,
+        magazine:12,
+        reserve:120,
+        length:30
+    },
 
-{
-    name:"SHOTGUN",
-    damage:25,
-    rate:650,
-    speed:760,
-    spread:.24,
-    pellets:7,
-    magazine:8,
-    reserve:48
-},
+    {
+        name:"SHOTGUN",
+        damage:25,
+        rate:650,
+        speed:760,
+        spread:.24,
+        pellets:7,
+        magazine:8,
+        reserve:48,
+        length:38
+    },
 
-{
-    name:"UZI",
-    damage:17,
-    rate:90,
-    speed:950,
-    spread:.09,
-    pellets:1,
-    magazine:30,
-    reserve:180
-},
+    {
+        name:"UZI",
+        damage:17,
+        rate:90,
+        speed:950,
+        spread:.09,
+        pellets:1,
+        magazine:30,
+        reserve:180,
+        length:25
+    },
 
-{
-    name:"RIFLE",
-    damage:30,
-    rate:135,
-    speed:1100,
-    spread:.04,
-    pellets:1,
-    magazine:30,
-    reserve:150
-}
+    {
+        name:"RIFLE",
+        damage:30,
+        rate:135,
+        speed:1100,
+        spread:.04,
+        pellets:1,
+        magazine:30,
+        reserve:150,
+        length:42
+    }
 
 ];
 
 
-/* ==================================================
-   JOYSTICKS
-================================================== */
+/* =====================================================
+   JOYSTICK
+===================================================== */
 
 class Joystick{
 
-constructor(elementID,knobID){
+    constructor(
+        elementID,
+        knobID
+    ){
 
-    this.element=$(elementID);
-    this.knob=$(knobID);
+        this.element=
+            $(elementID);
 
-    this.x=0;
-    this.y=0;
+        this.knob=
+            $(knobID);
 
-    this.pointerID=null;
+        this.x=0;
 
-    this.element.addEventListener(
-        "pointerdown",
-        e=>this.start(e)
-    );
+        this.y=0;
 
-    this.element.addEventListener(
-        "pointermove",
-        e=>this.move(e)
-    );
+        this.pointerID=null;
 
-    this.element.addEventListener(
-        "pointerup",
-        e=>this.end(e)
-    );
 
-    this.element.addEventListener(
-        "pointercancel",
-        e=>this.end(e)
-    );
-}
-
-start(e){
-
-    e.preventDefault();
-
-    this.pointerID=e.pointerId;
-
-    try{
-        this.element.setPointerCapture(
-            e.pointerId
+        this.element.addEventListener(
+            "pointerdown",
+            event=>
+                this.start(
+                    event
+                )
         );
-    }catch(error){}
 
-    this.calculate(e);
-}
 
-move(e){
+        this.element.addEventListener(
+            "pointermove",
+            event=>
+                this.move(
+                    event
+                )
+        );
 
-    if(
-        this.pointerID!==e.pointerId
-    ){
-        return;
+
+        this.element.addEventListener(
+            "pointerup",
+            event=>
+                this.end(
+                    event
+                )
+        );
+
+
+        this.element.addEventListener(
+            "pointercancel",
+            event=>
+                this.end(
+                    event
+                )
+        );
     }
 
-    e.preventDefault();
 
-    this.calculate(e);
-}
+    start(event){
 
-end(e){
+        event.preventDefault();
 
-    if(
-        this.pointerID!==e.pointerId
-    ){
-        return;
+        this.pointerID=
+            event.pointerId;
+
+        try{
+
+            this.element
+            .setPointerCapture(
+                event.pointerId
+            );
+
+        }catch(error){}
+
+        this.calculate(
+            event
+        );
     }
 
-    this.reset();
-}
 
-calculate(e){
+    move(event){
 
-    const rect=
-        this.element.getBoundingClientRect();
+        if(
+            this.pointerID !==
+            event.pointerId
+        ){
+            return;
+        }
 
-    const centerX=
-        rect.left+
-        rect.width/2;
+        event.preventDefault();
 
-    const centerY=
-        rect.top+
-        rect.height/2;
+        this.calculate(
+            event
+        );
+    }
 
-    let dx=e.clientX-centerX;
-    let dy=e.clientY-centerY;
 
-    const maximum=
-        rect.width*.31;
+    end(event){
 
-    const length=
-        Math.hypot(dx,dy);
+        if(
+            this.pointerID !==
+            event.pointerId
+        ){
+            return;
+        }
 
-    if(length>maximum){
+        this.reset();
+    }
 
-        dx=
-            dx/length*
+
+    calculate(event){
+
+        const rect=
+            this.element
+            .getBoundingClientRect();
+
+        const centerX=
+            rect.left+
+            rect.width/2;
+
+        const centerY=
+            rect.top+
+            rect.height/2;
+
+        let dx=
+            event.clientX-
+            centerX;
+
+        let dy=
+            event.clientY-
+            centerY;
+
+        const maximum=
+            rect.width*.31;
+
+        const length=
+            Math.hypot(
+                dx,
+                dy
+            );
+
+        if(
+            length>
+            maximum
+        ){
+
+            dx=
+                dx/
+                length*
+                maximum;
+
+            dy=
+                dy/
+                length*
+                maximum;
+        }
+
+
+        this.x=
+            dx/
             maximum;
 
-        dy=
-            dy/length*
+        this.y=
+            dy/
             maximum;
+
+
+        this.knob.style.transform=
+            `translate(${dx}px,${dy}px)`;
     }
 
-    this.x=dx/maximum;
-    this.y=dy/maximum;
 
-    this.knob.style.transform=
-        `translate(${dx}px,${dy}px)`;
+    reset(){
+
+        this.x=0;
+
+        this.y=0;
+
+        this.pointerID=null;
+
+        this.knob.style.transform=
+            "translate(0px,0px)";
+    }
 }
 
-reset(){
-
-    this.x=0;
-    this.y=0;
-
-    this.pointerID=null;
-
-    this.knob.style.transform=
-        "translate(0px,0px)";
-}
-
-}
 
 const moveStick=
     new Joystick(
         "moveJoystick",
         "moveKnob"
     );
+
 
 const aimStick=
     new Joystick(
@@ -846,77 +1355,131 @@ const aimStick=
     );
 
 
-/* ==================================================
+/* =====================================================
    MAP
-================================================== */
+===================================================== */
 
 function createMap(){
 
     walls=[
 
-    {
-        x:25,
-        y:25,
-        width:1230,
-        height:16
-    },
+        {
+            x:25,
+            y:25,
+            width:1230,
+            height:16
+        },
 
-    {
-        x:25,
-        y:679,
-        width:1230,
-        height:16
-    },
+        {
+            x:25,
+            y:679,
+            width:1230,
+            height:16
+        },
 
-    {
-        x:25,
-        y:25,
-        width:16,
-        height:670
-    },
+        {
+            x:25,
+            y:25,
+            width:16,
+            height:670
+        },
 
-    {
-        x:1239,
-        y:25,
-        width:16,
-        height:670
-    },
+        {
+            x:1239,
+            y:25,
+            width:16,
+            height:670
+        },
 
-    {
-        x:435,
-        y:250,
-        width:90,
-        height:22
-    },
 
-    {
-        x:755,
-        y:250,
-        width:90,
-        height:22
-    },
+        /* Upper-left room */
 
-    {
-        x:435,
-        y:448,
-        width:90,
-        height:22
-    },
+        {
+            x:270,
+            y:170,
+            width:190,
+            height:22
+        },
 
-    {
-        x:755,
-        y:448,
-        width:90,
-        height:22
-    }
+        {
+            x:270,
+            y:170,
+            width:22,
+            height:125
+        },
 
+
+        /* Upper-right */
+
+        {
+            x:820,
+            y:170,
+            width:190,
+            height:22
+        },
+
+        {
+            x:988,
+            y:170,
+            width:22,
+            height:125
+        },
+
+
+        /* Center obstacles */
+
+        {
+            x:515,
+            y:275,
+            width:105,
+            height:22
+        },
+
+        {
+            x:660,
+            y:275,
+            width:105,
+            height:22
+        },
+
+
+        {
+            x:515,
+            y:423,
+            width:105,
+            height:22
+        },
+
+        {
+            x:660,
+            y:423,
+            width:105,
+            height:22
+        },
+
+
+        /* Bottom */
+
+        {
+            x:270,
+            y:525,
+            width:190,
+            height:22
+        },
+
+        {
+            x:820,
+            y:525,
+            width:190,
+            height:22
+        }
     ];
 }
 
 
-/* ==================================================
-   WALL COLLISION
-================================================== */
+/* =====================================================
+   COLLISION
+===================================================== */
 
 function circleHitsWalls(
     px,
@@ -924,34 +1487,47 @@ function circleHitsWalls(
     radius
 ){
 
-    for(const wall of walls){
+    for(
+        const wall
+        of walls
+    ){
 
         const nearestX=
             clamp(
                 px,
                 wall.x,
-                wall.x+wall.width
+                wall.x+
+                wall.width
             );
+
 
         const nearestY=
             clamp(
                 py,
                 wall.y,
-                wall.y+wall.height
+                wall.y+
+                wall.height
             );
 
+
         const dx=
-            px-nearestX;
+            px-
+            nearestX;
+
 
         const dy=
-            py-nearestY;
+            py-
+            nearestY;
+
 
         if(
             dx*dx+
             dy*dy
             <
-            radius*radius
+            radius*
+            radius
         ){
+
             return true;
         }
     }
@@ -960,804 +1536,1036 @@ function circleHitsWalls(
 }
 
 
-/* ==================================================
+/* =====================================================
    PLAYER
-================================================== */
+===================================================== */
 
 class Player{
 
-constructor(){
+    constructor(){
 
-    /*
-    Ambos móviles utilizan exactamente
-    los mismos puntos de aparición.
-    */
+        if(multiplayer){
 
-    if(multiplayer){
+            this.x=
+                isHost
+                ?590
+                :690;
 
-        this.x=
-            isHost
-            ?590
-            :690;
+        }else{
 
-    }else{
-
-        this.x=640;
-    }
-
-    this.y=360;
-
-    this.radius=17;
-
-    this.speed=220;
-
-    this.health=100;
-    this.maxHealth=100;
-
-    this.rotation=0;
-
-    this.weaponIndex=0;
-
-    this.ammo=
-        WEAPONS.map(
-            weapon=>
-                weapon.magazine
-        );
-
-    this.reserve=
-        WEAPONS.map(
-            weapon=>
-                weapon.reserve
-        );
-
-    this.lastShot=0;
-
-    this.invulnerable=0;
-
-    this.dead=false;
-}
-
-update(dt,time){
-
-    if(this.dead){
-        return;
-    }
-
-    let mx=moveStick.x;
-    let my=moveStick.y;
-
-    let magnitude=
-        Math.hypot(mx,my);
-
-    if(magnitude>.08){
-
-        if(magnitude>1){
-
-            mx/=magnitude;
-            my/=magnitude;
+            this.x=640;
         }
 
-        this.move(
-            mx*this.speed*dt,
-            my*this.speed*dt
-        );
-    }
 
-    const aimMagnitude=
-        Math.hypot(
-            aimStick.x,
-            aimStick.y
-        );
+        this.y=360;
 
-    if(aimMagnitude>.18){
+        this.radius=17;
 
-        this.rotation=
-            Math.atan2(
-                aimStick.y,
-                aimStick.x
+        this.speed=220;
+
+        this.health=100;
+
+        this.maxHealth=100;
+
+        this.rotation=0;
+
+        this.weaponIndex=0;
+
+        this.ammo=
+            WEAPONS.map(
+                weapon=>
+                    weapon.magazine
             );
 
-        this.shoot(time);
+        this.reserve=
+            WEAPONS.map(
+                weapon=>
+                    weapon.reserve
+            );
+
+        this.lastShot=0;
+
+        this.invulnerable=0;
+
+        this.dead=false;
+
+        this.deathAnnounced=false;
     }
 
-    if(this.invulnerable>0){
 
-        this.invulnerable-=dt;
-    }
-}
-
-move(dx,dy){
-
-    /*
-    Colisión X.
-    */
-
-    const nextX=
-        this.x+dx;
-
-    if(
-        !circleHitsWalls(
-            nextX,
-            this.y,
-            this.radius
-        )
+    update(
+        dt,
+        time
     ){
-        this.x=nextX;
-    }
-
-    /*
-    Colisión Y.
-    */
-
-    const nextY=
-        this.y+dy;
-
-    if(
-        !circleHitsWalls(
-            this.x,
-            nextY,
-            this.radius
-        )
-    ){
-        this.y=nextY;
-    }
-
-    this.x=
-        clamp(
-            this.x,
-            45,
-            WORLD_W-45
-        );
-
-    this.y=
-        clamp(
-            this.y,
-            45,
-            WORLD_H-45
-        );
-}
-
-shoot(time){
-
-    const weapon=
-        WEAPONS[
-            this.weaponIndex
-        ];
-
-    if(
-        time-this.lastShot
-        <
-        weapon.rate
-    ){
-        return;
-    }
-
-    if(
-        this.ammo[
-            this.weaponIndex
-        ]<=0
-    ){
-
-        this.reload();
-
-        return;
-    }
-
-    this.lastShot=time;
-
-    this.ammo[
-        this.weaponIndex
-    ]--;
-
-    const shot={
-
-        x:this.x,
-        y:this.y,
-
-        rotation:
-            this.rotation,
-
-        weaponIndex:
-            this.weaponIndex
-    };
-
-    /*
-    SOLO.
-    */
-
-    if(!multiplayer){
-
-        createShot(
-            shot,
-            true
-        );
-
-        return;
-    }
-
-    /*
-    MULTIPLAYER.
-
-    Mandamos el disparo al servidor.
-
-    El Host será quien determine
-    el daño real.
-    */
-
-    if(
-        socket &&
-        socket.connected
-    ){
-
-        socket.emit(
-            "shoot",
-            shot
-        );
 
         /*
-        Host genera inmediatamente
-        su propio disparo.
+        Muerto:
+        no puede moverse ni disparar.
+
+        IMPORTANTE:
+        NO detenemos el game loop.
         */
 
-        if(isHost){
+        if(this.dead){
 
-            createShot(
-                shot,
-                true
-            );
-        }
-    }
-}
+            moveStick.reset();
 
-reload(){
-
-    const weapon=
-        WEAPONS[
-            this.weaponIndex
-        ];
-
-    const missing=
-        weapon.magazine-
-        this.ammo[
-            this.weaponIndex
-        ];
-
-    if(
-        missing<=0 ||
-        this.reserve[
-            this.weaponIndex
-        ]<=0
-    ){
-        return;
-    }
-
-    const amount=
-        Math.min(
-            missing,
-            this.reserve[
-                this.weaponIndex
-            ]
-        );
-
-    this.ammo[
-        this.weaponIndex
-    ]+=amount;
-
-    this.reserve[
-        this.weaponIndex
-    ]-=amount;
-
-    showMessage(
-        "RELOADED"
-    );
-}
-
-changeWeapon(){
-
-    this.weaponIndex++;
-
-    if(
-        this.weaponIndex>=
-        WEAPONS.length
-    ){
-        this.weaponIndex=0;
-    }
-
-    if(
-        multiplayer &&
-        socket &&
-        socket.connected
-    ){
-
-        socket.emit(
-            "weaponChanged",
-            {
-                weaponIndex:
-                    this.weaponIndex
-            }
-        );
-    }
-
-    updateHUD();
-}
-
-applyDamage(amount){
-
-    if(
-        this.dead ||
-        this.invulnerable>0
-    ){
-        return;
-    }
-
-    this.health-=amount;
-
-    this.health=
-        clamp(
-            this.health,
-            0,
-            100
-        );
-
-    this.invulnerable=.3;
-
-    if(this.health<=0){
-
-        this.dead=true;
-    }
-}
-
-}
-
-
-/* ==================================================
-   BULLET
-================================================== */
-
-class Bullet{
-
-constructor(
-    px,
-    py,
-    angle,
-    weapon,
-    authoritative
-){
-
-    this.x=px;
-    this.y=py;
-
-    this.oldX=px;
-    this.oldY=py;
-
-    this.vx=
-        Math.cos(angle)*
-        weapon.speed;
-
-    this.vy=
-        Math.sin(angle)*
-        weapon.speed;
-
-    this.damage=
-        weapon.damage;
-
-    this.life=1.2;
-
-    this.authoritative=
-        authoritative;
-
-    this.dead=false;
-}
-
-update(dt){
-
-    if(this.dead){
-        return;
-    }
-
-    this.oldX=this.x;
-    this.oldY=this.y;
-
-    this.x+=
-        this.vx*dt;
-
-    this.y+=
-        this.vy*dt;
-
-    this.life-=dt;
-
-    if(
-        this.life<=0 ||
-        this.x<0 ||
-        this.y<0 ||
-        this.x>WORLD_W ||
-        this.y>WORLD_H
-    ){
-
-        this.dead=true;
-
-        return;
-    }
-
-    if(
-        circleHitsWalls(
-            this.x,
-            this.y,
-            2
-        )
-    ){
-
-        this.dead=true;
-
-        return;
-    }
-
-    /*
-    Los disparos visuales del Client
-    NO calculan daño.
-
-    Solamente el Host o SOLO.
-    */
-
-    if(
-        !this.authoritative
-    ){
-        return;
-    }
-
-    for(const zombie of zombies){
-
-        if(
-            zombie.dead
-        ){
-            continue;
-        }
-
-        if(
-            distance(
-                this,
-                zombie
-            )
-            <
-            zombie.radius
-        ){
-
-            zombie.health-=
-                this.damage;
-
-            this.dead=true;
-
-            if(
-                zombie.health<=0
-            ){
-
-                zombie.dead=true;
-
-                score+=100;
-            }
+            aimStick.reset();
 
             return;
         }
+
+
+        let moveX=
+            moveStick.x;
+
+        let moveY=
+            moveStick.y;
+
+
+        const magnitude=
+            Math.hypot(
+                moveX,
+                moveY
+            );
+
+
+        if(
+            magnitude>.08
+        ){
+
+            if(
+                magnitude>1
+            ){
+
+                moveX/=
+                    magnitude;
+
+                moveY/=
+                    magnitude;
+            }
+
+
+            this.move(
+                moveX*
+                this.speed*
+                dt,
+
+                moveY*
+                this.speed*
+                dt
+            );
+        }
+
+
+        const aimMagnitude=
+            Math.hypot(
+                aimStick.x,
+                aimStick.y
+            );
+
+
+        if(
+            aimMagnitude>.18
+        ){
+
+            this.rotation=
+                Math.atan2(
+                    aimStick.y,
+                    aimStick.x
+                );
+
+
+            this.shoot(
+                time
+            );
+        }
+
+
+        if(
+            this.invulnerable>0
+        ){
+
+            this.invulnerable-=
+                dt;
+        }
+    }
+
+
+    move(
+        dx,
+        dy
+    ){
+
+        const nextX=
+            this.x+
+            dx;
+
+
+        if(
+            !circleHitsWalls(
+                nextX,
+                this.y,
+                this.radius
+            )
+        ){
+
+            this.x=
+                nextX;
+        }
+
+
+        const nextY=
+            this.y+
+            dy;
+
+
+        if(
+            !circleHitsWalls(
+                this.x,
+                nextY,
+                this.radius
+            )
+        ){
+
+            this.y=
+                nextY;
+        }
+
+
+        this.x=
+            clamp(
+                this.x,
+                45,
+                WORLD_W-45
+            );
+
+
+        this.y=
+            clamp(
+                this.y,
+                45,
+                WORLD_H-45
+            );
+    }
+
+
+    shoot(time){
+
+        if(this.dead){
+            return;
+        }
+
+
+        const weapon=
+            WEAPONS[
+                this.weaponIndex
+            ];
+
+
+        if(
+            time-
+            this.lastShot
+            <
+            weapon.rate
+        ){
+
+            return;
+        }
+
+
+        if(
+            this.ammo[
+                this.weaponIndex
+            ]
+            <=0
+        ){
+
+            this.reload();
+
+            return;
+        }
+
+
+        this.lastShot=
+            time;
+
+
+        this.ammo[
+            this.weaponIndex
+        ]--;
+
+
+        const shot={
+
+            x:
+                this.x,
+
+            y:
+                this.y,
+
+            rotation:
+                this.rotation,
+
+            weaponIndex:
+                this.weaponIndex
+        };
+
+
+        /*
+        ==============================
+        SOLO
+        ==============================
+        */
+
+        if(!multiplayer){
+
+            createShot(
+                shot,
+                true,
+                "local"
+            );
+
+            return;
+        }
+
+
+        /*
+        ==============================
+        ONLINE
+
+        SIEMPRE creamos primero una
+        bala local para que el jugador
+        vea inmediatamente su disparo.
+        ==============================
+        */
+
+
+        createShot(
+            shot,
+
+            /*
+            Si somos Host, esa bala
+            también calcula daño.
+
+            Si somos Client, solamente
+            es visual.
+            */
+
+            isHost,
+
+            "local"
+        );
+
+
+        if(
+            socket &&
+            socket.connected
+        ){
+
+            socket.emit(
+                "shoot",
+                shot
+            );
+        }
+    }
+
+
+    reload(){
+
+        if(this.dead){
+            return;
+        }
+
+
+        const weapon=
+            WEAPONS[
+                this.weaponIndex
+            ];
+
+
+        const missing=
+            weapon.magazine-
+            this.ammo[
+                this.weaponIndex
+            ];
+
+
+        if(
+            missing<=0 ||
+            this.reserve[
+                this.weaponIndex
+            ]<=0
+        ){
+
+            return;
+        }
+
+
+        const amount=
+            Math.min(
+                missing,
+
+                this.reserve[
+                    this.weaponIndex
+                ]
+            );
+
+
+        this.ammo[
+            this.weaponIndex
+        ]+=
+            amount;
+
+
+        this.reserve[
+            this.weaponIndex
+        ]-=
+            amount;
+
+
+        showMessage(
+            "RELOADED"
+        );
+    }
+
+
+    changeWeapon(){
+
+        if(this.dead){
+            return;
+        }
+
+
+        this.weaponIndex=
+            (
+                this.weaponIndex+
+                1
+            )
+            %
+            WEAPONS.length;
+
+
+        if(
+            multiplayer &&
+            socket &&
+            socket.connected
+        ){
+
+            socket.emit(
+                "weaponChanged",
+                {
+                    weaponIndex:
+                        this.weaponIndex
+                }
+            );
+        }
+
+
+        updateHUD();
+    }
+
+
+    applyDamage(
+        amount
+    ){
+
+        if(
+            this.dead ||
+            this.invulnerable>0
+        ){
+
+            return;
+        }
+
+
+        this.health=
+            clamp(
+                this.health-
+                amount,
+
+                0,
+                this.maxHealth
+            );
+
+
+        this.invulnerable=
+            .3;
+
+
+        if(
+            this.health<=0
+        ){
+
+            this.health=0;
+
+            this.dead=true;
+        }
     }
 }
 
+
+/* =====================================================
+   BULLET
+===================================================== */
+
+class Bullet{
+
+    constructor(
+        px,
+        py,
+        angle,
+        weapon,
+        authoritative,
+        owner
+    ){
+
+        this.x=px;
+
+        this.y=py;
+
+        this.oldX=px;
+
+        this.oldY=py;
+
+
+        this.vx=
+            Math.cos(
+                angle
+            )
+            *
+            weapon.speed;
+
+
+        this.vy=
+            Math.sin(
+                angle
+            )
+            *
+            weapon.speed;
+
+
+        this.damage=
+            weapon.damage;
+
+
+        this.life=
+            1.25;
+
+
+        this.authoritative=
+            authoritative;
+
+
+        this.owner=
+            owner;
+
+
+        this.dead=false;
+    }
+
+
+    update(dt){
+
+        if(this.dead){
+            return;
+        }
+
+
+        this.oldX=
+            this.x;
+
+        this.oldY=
+            this.y;
+
+
+        this.x+=
+            this.vx*
+            dt;
+
+
+        this.y+=
+            this.vy*
+            dt;
+
+
+        this.life-=
+            dt;
+
+
+        if(
+            this.life<=0 ||
+            this.x<0 ||
+            this.y<0 ||
+            this.x>WORLD_W ||
+            this.y>WORLD_H
+        ){
+
+            this.dead=true;
+
+            return;
+        }
+
+
+        if(
+            circleHitsWalls(
+                this.x,
+                this.y,
+                2
+            )
+        ){
+
+            this.dead=true;
+
+            return;
+        }
+
+
+        /*
+        Visual solamente.
+        */
+
+        if(
+            !this.authoritative
+        ){
+
+            return;
+        }
+
+
+        /*
+        HOST / SOLO:
+        daño real.
+        */
+
+        for(
+            const zombie
+            of zombies
+        ){
+
+            if(
+                zombie.dead
+            ){
+                continue;
+            }
+
+
+            if(
+                distance(
+                    this,
+                    zombie
+                )
+                <
+                zombie.radius+
+                3
+            ){
+
+                zombie.health-=
+                    this.damage;
+
+
+                this.dead=true;
+
+
+                if(
+                    zombie.health<=0
+                ){
+
+                    zombie.health=0;
+
+                    zombie.dead=true;
+
+                    score+=100;
+                }
+
+
+                return;
+            }
+        }
+    }
 }
 
 
-/* ==================================================
+/* =====================================================
    CREATE SHOT
-================================================== */
+===================================================== */
 
 function createShot(
     shot,
-    authoritative
+    authoritative,
+    owner
 ){
 
     const index=
-        clamp(
-            Number(
-                shot.weaponIndex
-            )||0,
-            0,
-            3
+        Math.floor(
+            clamp(
+                Number(
+                    shot.weaponIndex
+                )||0,
+                0,
+                3
+            )
         );
 
+
     const weapon=
-        WEAPONS[index];
+        WEAPONS[
+            index
+        ];
+
 
     for(
         let i=0;
-        i<weapon.pellets;
+        i<
+        weapon.pellets;
         i++
     ){
 
         const angle=
-            shot.rotation+
-            rand(
+            Number(
+                shot.rotation
+            )
+            +
+            random(
                 -weapon.spread,
                 weapon.spread
             );
+
 
         bullets.push(
 
             new Bullet(
 
-                shot.x+
-                Math.cos(angle)*26,
+                Number(
+                    shot.x
+                )
+                +
+                Math.cos(
+                    angle
+                )*
+                26,
 
-                shot.y+
-                Math.sin(angle)*26,
+
+                Number(
+                    shot.y
+                )
+                +
+                Math.sin(
+                    angle
+                )*
+                26,
+
 
                 angle,
 
                 weapon,
 
-                authoritative
+                authoritative,
+
+                owner
             )
         );
     }
 }
 
 
-/* ==================================================
+/* =====================================================
    ZOMBIE
-================================================== */
+===================================================== */
 
 class Zombie{
 
-constructor(
-    px,
-    py,
-    type="normal"
-){
-
-    this.x=px;
-    this.y=py;
-
-    this.type=type;
-
-    this.radius=
-        type==="tank"
-        ?23
-        :16;
-
-    if(type==="tank"){
-
-        this.health=
-            230+
-            wave*15;
-
-        this.speed=
-            42+
-            wave;
-
-        this.damageAmount=18;
-
-    }else if(type==="fast"){
-
-        this.health=
-            55+
-            wave*4;
-
-        this.speed=
-            95+
-            wave;
-
-        this.damageAmount=8;
-
-    }else{
-
-        this.health=
-            85+
-            wave*7;
-
-        this.speed=
-            58+
-            wave*1.2;
-
-        this.damageAmount=11;
-    }
-
-    this.maxHealth=
-        this.health;
-
-    this.attackTimer=0;
-
-    this.dead=false;
-}
-
-update(dt){
-
-    /*
-    SOLO y HOST son los únicos
-    que ejecutan esta función.
-    */
-
-    const targets=[];
-
-    if(
-        player &&
-        !player.dead
+    constructor(
+        px,
+        py,
+        type="normal"
     ){
 
-        targets.push({
+        this.x=px;
 
-            object:player,
+        this.y=py;
 
-            local:true
-        });
-    }
+        this.type=type;
 
-    if(
-        remotePlayer &&
-        !remotePlayer.dead
-    ){
 
-        targets.push({
+        this.radius=
+            type==="tank"
+            ?23
+            :16;
 
-            object:
-                remotePlayer,
-
-            local:false
-        });
-    }
-
-    if(
-        targets.length===0
-    ){
-        return;
-    }
-
-    targets.sort(
-        (a,b)=>
-            distance(
-                this,
-                a.object
-            )
-            -
-            distance(
-                this,
-                b.object
-            )
-    );
-
-    const targetData=
-        targets[0];
-
-    const target=
-        targetData.object;
-
-    const angle=
-        Math.atan2(
-            target.y-this.y,
-            target.x-this.x
-        );
-
-    const amount=
-        this.speed*dt;
-
-    let nx=
-        this.x+
-        Math.cos(angle)*
-        amount;
-
-    let ny=
-        this.y+
-        Math.sin(angle)*
-        amount;
-
-    if(
-        !circleHitsWalls(
-            nx,
-            ny,
-            this.radius
-        )
-    ){
-
-        this.x=nx;
-        this.y=ny;
-
-    }else{
-
-        /*
-        Desvío sencillo alrededor
-        de paredes.
-        */
-
-        const alternatives=[
-            1,
-            -1,
-            1.57,
-            -1.57
-        ];
-
-        for(
-            const offset
-            of alternatives
-        ){
-
-            nx=
-                this.x+
-                Math.cos(
-                    angle+offset
-                )*
-                amount;
-
-            ny=
-                this.y+
-                Math.sin(
-                    angle+offset
-                )*
-                amount;
-
-            if(
-                !circleHitsWalls(
-                    nx,
-                    ny,
-                    this.radius
-                )
-            ){
-
-                this.x=nx;
-                this.y=ny;
-
-                break;
-            }
-        }
-    }
-
-    /*
-    ATAQUE.
-    */
-
-    if(
-        distance(
-            this,
-            target
-        )
-        <
-        this.radius+22
-    ){
 
         if(
-            this.attackTimer<=0
+            type==="tank"
+        ){
+
+            this.health=
+                230+
+                wave*15;
+
+            this.speed=
+                42+
+                wave;
+
+            this.damageAmount=
+                18;
+
+        }else if(
+            type==="fast"
+        ){
+
+            this.health=
+                55+
+                wave*4;
+
+            this.speed=
+                95+
+                wave;
+
+            this.damageAmount=
+                8;
+
+        }else{
+
+            this.health=
+                85+
+                wave*7;
+
+            this.speed=
+                58+
+                wave*1.2;
+
+            this.damageAmount=
+                11;
+        }
+
+
+        this.maxHealth=
+            this.health;
+
+
+        this.attackTimer=
+            0;
+
+
+        this.dead=false;
+    }
+
+
+    update(dt){
+
+        const targets=[];
+
+
+        if(
+            player &&
+            !player.dead
+        ){
+
+            targets.push({
+                object:player,
+                local:true
+            });
+        }
+
+
+        if(
+            remotePlayer &&
+            !remotePlayer.dead
+        ){
+
+            targets.push({
+                object:remotePlayer,
+                local:false
+            });
+        }
+
+
+        if(
+            targets.length===0
+        ){
+
+            return;
+        }
+
+
+        targets.sort(
+            (
+                first,
+                second
+            )=>
+
+                distance(
+                    this,
+                    first.object
+                )
+                -
+                distance(
+                    this,
+                    second.object
+                )
+        );
+
+
+        const targetData=
+            targets[0];
+
+
+        const target=
+            targetData.object;
+
+
+        const angle=
+            Math.atan2(
+                target.y-
+                this.y,
+
+                target.x-
+                this.x
+            );
+
+
+        const movement=
+            this.speed*
+            dt;
+
+
+        let nextX=
+            this.x+
+            Math.cos(
+                angle
+            )*
+            movement;
+
+
+        let nextY=
+            this.y+
+            Math.sin(
+                angle
+            )*
+            movement;
+
+
+        if(
+            !circleHitsWalls(
+                nextX,
+                nextY,
+                this.radius
+            )
+        ){
+
+            this.x=
+                nextX;
+
+            this.y=
+                nextY;
+
+        }else{
+
+            const alternatives=[
+                .8,
+                -.8,
+                1.4,
+                -1.4
+            ];
+
+
+            for(
+                const offset
+                of alternatives
+            ){
+
+                nextX=
+                    this.x+
+                    Math.cos(
+                        angle+
+                        offset
+                    )
+                    *
+                    movement;
+
+
+                nextY=
+                    this.y+
+                    Math.sin(
+                        angle+
+                        offset
+                    )
+                    *
+                    movement;
+
+
+                if(
+                    !circleHitsWalls(
+                        nextX,
+                        nextY,
+                        this.radius
+                    )
+                ){
+
+                    this.x=
+                        nextX;
+
+                    this.y=
+                        nextY;
+
+                    break;
+                }
+            }
+        }
+
+
+        if(
+            distance(
+                this,
+                target
+            )
+            <
+            this.radius+
+            22
         ){
 
             if(
-                targetData.local
+                this.attackTimer<=0
             ){
 
-                authoritativeDamage(
-                    "self",
-                    this.damageAmount
-                );
+                if(
+                    targetData.local
+                ){
 
-            }else{
+                    authoritativeDamage(
+                        "self",
+                        this.damageAmount
+                    );
 
-                authoritativeDamage(
-                    "remote",
-                    this.damageAmount
-                );
+                }else{
+
+                    authoritativeDamage(
+                        "remote",
+                        this.damageAmount
+                    );
+                }
+
+
+                this.attackTimer=
+                    .7;
             }
+        }
 
-            this.attackTimer=.7;
+
+        if(
+            this.attackTimer>0
+        ){
+
+            this.attackTimer-=
+                dt;
         }
     }
-
-    if(
-        this.attackTimer>0
-    ){
-
-        this.attackTimer-=dt;
-    }
-}
-
 }
 
 
-/* ==================================================
-   AUTHORITATIVE DAMAGE
-================================================== */
+/* =====================================================
+   DAMAGE
+===================================================== */
 
 function authoritativeDamage(
     target,
@@ -1777,14 +2585,15 @@ function authoritativeDamage(
         return;
     }
 
+
     /*
-    En online solamente el Host
-    calcula ataques de zombis.
+    Online solamente Host.
     */
 
     if(!isHost){
         return;
     }
+
 
     if(
         target==="self"
@@ -1794,23 +2603,35 @@ function authoritativeDamage(
             amount
         );
 
-        socket.emit(
-            "authoritativeHealth",
-            {
-                target:"host",
-                health:
-                    player.health,
-                dead:
-                    player.dead
-            }
-        );
+
+        if(
+            socket &&
+            socket.connected
+        ){
+
+            socket.emit(
+                "authoritativeHealth",
+                {
+                    target:"host",
+
+                    health:
+                        player.health,
+
+                    dead:
+                        player.dead
+                }
+            );
+        }
+
 
         return;
     }
 
+
     if(
         target==="remote" &&
-        remotePlayer
+        remotePlayer &&
+        !remotePlayer.dead
     ){
 
         remotePlayer.health=
@@ -1821,26 +2642,42 @@ function authoritativeDamage(
                 100
             );
 
-        remotePlayer.dead=
-            remotePlayer.health<=0;
 
-        socket.emit(
-            "authoritativeHealth",
-            {
-                target:"client",
-                health:
-                    remotePlayer.health,
-                dead:
-                    remotePlayer.dead
-            }
-        );
+        if(
+            remotePlayer.health<=0
+        ){
+
+            remotePlayer.health=0;
+
+            remotePlayer.dead=true;
+        }
+
+
+        if(
+            socket &&
+            socket.connected
+        ){
+
+            socket.emit(
+                "authoritativeHealth",
+                {
+                    target:"client",
+
+                    health:
+                        remotePlayer.health,
+
+                    dead:
+                        remotePlayer.dead
+                }
+            );
+        }
     }
 }
 
 
-/* ==================================================
-   SPAWN
-================================================== */
+/* =====================================================
+   ZOMBIE SPAWN
+===================================================== */
 
 function getSpawnPosition(){
 
@@ -1849,33 +2686,37 @@ function getSpawnPosition(){
             Math.random()*4
         );
 
+
     if(side===0){
 
         return{
-            x:rand(70,1210),
+            x:random(70,1210),
             y:65
         };
     }
+
 
     if(side===1){
 
         return{
             x:1215,
-            y:rand(70,650)
+            y:random(70,650)
         };
     }
+
 
     if(side===2){
 
         return{
-            x:rand(70,1210),
+            x:random(70,1210),
             y:655
         };
     }
 
+
     return{
         x:65,
-        y:rand(70,650)
+        y:random(70,650)
     };
 }
 
@@ -1885,25 +2726,32 @@ function spawnZombie(){
     const spawn=
         getSpawnPosition();
 
-    const random=
+
+    const chance=
         Math.random();
 
-    let type="normal";
+
+    let type=
+        "normal";
+
 
     if(
         wave>=6 &&
-        random<.06
+        chance<.06
     ){
 
-        type="tank";
+        type=
+            "tank";
 
     }else if(
         wave>=2 &&
-        random<.25
+        chance<.25
     ){
 
-        type="fast";
+        type=
+            "fast";
     }
+
 
     zombies.push(
 
@@ -1920,361 +2768,507 @@ function beginWave(){
 
     wave++;
 
+
     enemiesToSpawn=
         5+
         wave*3;
 
-    spawnTimer=.4;
+
+    spawnTimer=
+        .4;
+
 
     showMessage(
-        "WAVE "+wave
+        "WAVE "+
+        wave
     );
 }
 
 
-/* ==================================================
+/* =====================================================
    NETWORK
-================================================== */
+===================================================== */
 
 let socket=null;
 
+
 try{
 
-socket=io();
-
-socket.on(
-"connect",
-()=>{
-
-    $("connectionStatus").textContent=
-        "🟢 Server connected";
-
-    $("connectionStatus").className=
-        "status good";
-});
+    socket=
+        io();
 
 
-socket.on(
-"disconnect",
-()=>{
+    socket.on(
+        "connect",
+        ()=>{
 
-    $("connectionStatus").textContent=
-        "🔴 Server disconnected";
-
-    $("connectionStatus").className=
-        "status bad";
-});
+            $("connectionStatus")
+            .textContent=
+                "🟢 Server connected";
 
 
-socket.on(
-"roomPlayers",
-data=>{
-
-    connectedPlayers=
-        Number(
-            data.count
-        )||1;
-
-    if(
-        connectedPlayers>=2
-    ){
-
-        $("lobbyStatus").innerHTML=
-            isHost
-            ?
-            "🟢 2 / 2 PLAYERS<br><br>Press START GAME."
-            :
-            "🟢 2 / 2 PLAYERS<br><br>Waiting for Host...";
-
-        if(isHost){
-
-            $("startOnlineButton")
-            .classList
-            .remove("hidden");
+            $("connectionStatus")
+            .className=
+                "status good";
         }
-    }
-});
-
-
-socket.on(
-"playerJoined",
-()=>{
-
-    connectedPlayers=2;
-
-    if(isHost){
-
-        $("startOnlineButton")
-        .classList
-        .remove("hidden");
-    }
-});
-
-
-socket.on(
-"matchStarted",
-()=>{
-
-    startGame(true);
-});
-
-
-socket.on(
-"remotePlayerState",
-data=>{
-
-    if(!data){
-        return;
-    }
-
-    if(!remotePlayer){
-
-        remotePlayer={
-
-            x:data.x,
-            y:data.y,
-
-            rotation:
-                data.rotation,
-
-            health:
-                data.health,
-
-            weaponIndex:
-                data.weaponIndex,
-
-            dead:
-                data.dead,
-
-            radius:17
-        };
-
-    }else{
-
-        remotePlayer.x=
-            data.x;
-
-        remotePlayer.y=
-            data.y;
-
-        remotePlayer.rotation=
-            data.rotation;
-
-        remotePlayer.weaponIndex=
-            data.weaponIndex;
-
-        /*
-        IMPORTANTE:
-
-        El Host no debe aceptar que el
-        Client vuelva a poner su vida
-        arbitrariamente a 100.
-
-        El server nuevo manejará esto
-        junto con authoritativeHealth.
-        */
-
-        if(!isHost){
-
-            remotePlayer.health=
-                data.health;
-
-            remotePlayer.dead=
-                data.dead;
-        }
-    }
-});
-
-
-socket.on(
-"remoteShoot",
-data=>{
-
-    if(!data){
-        return;
-    }
-
-    /*
-    Si somos Host, el disparo del Client
-    puede hacer daño.
-
-    Si somos Client, el disparo del Host
-    es solamente visual porque el Host
-    ya calculó el impacto.
-    */
-
-    createShot(
-        data,
-        isHost
     );
-});
 
 
-socket.on(
-"authoritativeHealth",
-data=>{
+    socket.on(
+        "disconnect",
+        ()=>{
 
-    if(!data){
-        return;
-    }
-
-    const belongsToMe=
-
-        (
-            isHost &&
-            data.target==="host"
-        )
-
-        ||
-
-        (
-            !isHost &&
-            data.target==="client"
-        );
-
-    if(
-        belongsToMe &&
-        player
-    ){
-
-        player.health=
-            data.health;
-
-        player.dead=
-            Boolean(
-                data.dead
-            );
-
-    }else if(
-        remotePlayer
-    ){
-
-        remotePlayer.health=
-            data.health;
-
-        remotePlayer.dead=
-            Boolean(
-                data.dead
-            );
-    }
-});
+            $("connectionStatus")
+            .textContent=
+                "🔴 Server disconnected";
 
 
-socket.on(
-"worldState",
-data=>{
+            $("connectionStatus")
+            .className=
+                "status bad";
+        }
+    );
 
-    /*
-    Host ya tiene el mundo original.
-    */
 
-    if(
-        isHost ||
-        !data
-    ){
-        return;
-    }
+    socket.on(
+        "roomPlayers",
+        data=>{
 
-    wave=
-        Number(
-            data.wave
-        )||0;
+            connectedPlayers=
+                Number(
+                    data.count
+                )||1;
 
-    score=
-        Number(
-            data.score
-        )||0;
 
-    enemiesToSpawn=
-        Number(
-            data.enemiesToSpawn
-        )||0;
+            if(
+                connectedPlayers>=2
+            ){
 
-    const incoming=
-        Array.isArray(
-            data.zombies
-        )
-        ?
-        data.zombies
-        :
-        [];
+                $("lobbyStatus")
+                .innerHTML=
 
-    zombies=
-        incoming
-        .filter(
-            zombie=>
-                !zombie.dead
-        )
-        .map(
-            dataZombie=>{
+                    isHost
 
-                const zombie=
-                    new Zombie(
-                        dataZombie.x,
-                        dataZombie.y,
-                        dataZombie.type
+                    ?
+
+                    "🟢 2 / 2 PLAYERS<br><br>Press START GAME."
+
+                    :
+
+                    "🟢 2 / 2 PLAYERS<br><br>Waiting for Host...";
+
+
+                if(isHost){
+
+                    $("startOnlineButton")
+                    .classList
+                    .remove(
+                        "hidden"
                     );
-
-                zombie.radius=
-                    dataZombie.radius;
-
-                zombie.health=
-                    dataZombie.health;
-
-                zombie.maxHealth=
-                    dataZombie.maxHealth;
-
-                zombie.dead=
-                    Boolean(
-                        dataZombie.dead
-                    );
-
-                return zombie;
+                }
             }
-        );
-});
-
-
-socket.on(
-"playerLeft",
-()=>{
-
-    remotePlayer=null;
-
-    connectedPlayers=1;
-
-    showMessage(
-        "PLAYER LEFT"
-    );
-});
-
-
-socket.on(
-"roomClosed",
-()=>{
-
-    alert(
-        "The Host closed the room."
+        }
     );
 
-    multiplayer=false;
-    isHost=false;
 
-    currentRoom=null;
+    socket.on(
+        "playerJoined",
+        ()=>{
 
-    goToMenu();
-});
+            connectedPlayers=
+                2;
+
+
+            if(isHost){
+
+                $("startOnlineButton")
+                .classList
+                .remove(
+                    "hidden"
+                );
+            }
+        }
+    );
+
+
+    socket.on(
+        "matchStarted",
+        ()=>{
+
+            startGame(
+                true
+            );
+        }
+    );
+
+
+    socket.on(
+        "remotePlayerState",
+        data=>{
+
+            if(!data){
+                return;
+            }
+
+
+            if(
+                !remotePlayer
+            ){
+
+                remotePlayer={
+
+                    x:
+                        Number(
+                            data.x
+                        ),
+
+                    y:
+                        Number(
+                            data.y
+                        ),
+
+                    rotation:
+                        Number(
+                            data.rotation
+                        )||0,
+
+                    health:
+                        Number(
+                            data.health
+                        )||100,
+
+                    weaponIndex:
+                        Number(
+                            data.weaponIndex
+                        )||0,
+
+                    dead:
+                        Boolean(
+                            data.dead
+                        ),
+
+                    radius:17
+                };
+
+            }else{
+
+                remotePlayer.x=
+                    Number(
+                        data.x
+                    );
+
+
+                remotePlayer.y=
+                    Number(
+                        data.y
+                    );
+
+
+                remotePlayer.rotation=
+                    Number(
+                        data.rotation
+                    )||0;
+
+
+                remotePlayer.weaponIndex=
+                    Number(
+                        data.weaponIndex
+                    )||0;
+
+
+                /*
+                CLIENT puede recibir la vida
+                del Host.
+
+                HOST conserva la vida
+                autoritativa del Client.
+                */
+
+                if(!isHost){
+
+                    remotePlayer.health=
+                        Number(
+                            data.health
+                        );
+
+
+                    remotePlayer.dead=
+                        Boolean(
+                            data.dead
+                        );
+                }
+            }
+        }
+    );
+
+
+    socket.on(
+        "remoteWeaponChanged",
+        data=>{
+
+            if(
+                remotePlayer &&
+                data
+            ){
+
+                remotePlayer.weaponIndex=
+                    Math.floor(
+                        Number(
+                            data.weaponIndex
+                        )||0
+                    );
+            }
+        }
+    );
+
+
+    socket.on(
+        "remoteShoot",
+        data=>{
+
+            if(!data){
+                return;
+            }
+
+
+            /*
+            HOST recibe disparo Client:
+            daño real.
+
+            CLIENT recibe disparo Host:
+            visual.
+
+            El jugador que disparó ya
+            creó su propia bala local.
+            */
+
+            createShot(
+                data,
+                isHost,
+                "remote"
+            );
+        }
+    );
+
+
+    socket.on(
+        "authoritativeHealth",
+        data=>{
+
+            if(!data){
+                return;
+            }
+
+
+            const belongsToMe=
+
+                (
+                    isHost &&
+                    data.target===
+                    "host"
+                )
+
+                ||
+
+                (
+                    !isHost &&
+                    data.target===
+                    "client"
+                );
+
+
+            if(
+                belongsToMe &&
+                player
+            ){
+
+                player.health=
+                    clamp(
+                        Number(
+                            data.health
+                        )||0,
+                        0,
+                        100
+                    );
+
+
+                player.dead=
+                    Boolean(
+                        data.dead
+                    );
+
+
+                if(
+                    player.dead
+                ){
+
+                    showLocalDeath();
+                }
+
+            }else if(
+                remotePlayer
+            ){
+
+                remotePlayer.health=
+                    clamp(
+                        Number(
+                            data.health
+                        )||0,
+                        0,
+                        100
+                    );
+
+
+                remotePlayer.dead=
+                    Boolean(
+                        data.dead
+                    );
+            }
+        }
+    );
+
+
+    socket.on(
+        "worldState",
+        data=>{
+
+            if(
+                isHost ||
+                !data
+            ){
+
+                return;
+            }
+
+
+            wave=
+                Number(
+                    data.wave
+                )||0;
+
+
+            score=
+                Number(
+                    data.score
+                )||0;
+
+
+            enemiesToSpawn=
+                Number(
+                    data.enemiesToSpawn
+                )||0;
+
+
+            const incoming=
+                Array.isArray(
+                    data.zombies
+                )
+                ?
+                data.zombies
+                :
+                [];
+
+
+            zombies=
+                incoming
+
+                .filter(
+                    zombie=>
+                        !zombie.dead
+                )
+
+                .map(
+                    zombieData=>{
+
+                        const zombie=
+                            new Zombie(
+                                Number(
+                                    zombieData.x
+                                ),
+                                Number(
+                                    zombieData.y
+                                ),
+                                zombieData.type
+                            );
+
+
+                        zombie.radius=
+                            Number(
+                                zombieData.radius
+                            )||16;
+
+
+                        zombie.health=
+                            Number(
+                                zombieData.health
+                            )||0;
+
+
+                        zombie.maxHealth=
+                            Number(
+                                zombieData.maxHealth
+                            )||100;
+
+
+                        zombie.dead=
+                            Boolean(
+                                zombieData.dead
+                            );
+
+
+                        return zombie;
+                    }
+                );
+        }
+    );
+
+
+    socket.on(
+        "playerLeft",
+        ()=>{
+
+            remotePlayer=null;
+
+            connectedPlayers=1;
+
+            showMessage(
+                "PLAYER LEFT"
+            );
+        }
+    );
+
+
+    socket.on(
+        "roomClosed",
+        ()=>{
+
+            alert(
+                "The Host closed the room."
+            );
+
+
+            multiplayer=false;
+
+            isHost=false;
+
+            currentRoom=null;
+
+            goToMenu();
+        }
+    );
+
 
 }catch(error){
 
-console.error(error);
-
+    console.error(
+        error
+    );
 }
 
 
-/* ==================================================
-   SEND PLAYER STATE
-================================================== */
+/* =====================================================
+   SEND PLAYER
+===================================================== */
 
 function sendPlayerState(dt){
 
@@ -2284,24 +3278,35 @@ function sendPlayerState(dt){
         !socket.connected ||
         !player
     ){
+
         return;
     }
 
-    playerNetworkTimer-=dt;
+
+    playerNetworkTimer-=
+        dt;
+
 
     if(
         playerNetworkTimer>0
     ){
+
         return;
     }
 
-    playerNetworkTimer=.05;
+
+    playerNetworkTimer=
+        .05;
+
 
     socket.emit(
         "playerState",
         {
-            x:player.x,
-            y:player.y,
+            x:
+                player.x,
+
+            y:
+                player.y,
 
             rotation:
                 player.rotation,
@@ -2319,9 +3324,9 @@ function sendPlayerState(dt){
 }
 
 
-/* ==================================================
-   SEND WORLD STATE
-================================================== */
+/* =====================================================
+   SEND WORLD
+===================================================== */
 
 function sendWorldState(dt){
 
@@ -2331,34 +3336,46 @@ function sendWorldState(dt){
         !socket ||
         !socket.connected
     ){
+
         return;
     }
 
-    zombieNetworkTimer-=dt;
+
+    worldNetworkTimer-=
+        dt;
+
 
     if(
-        zombieNetworkTimer>0
+        worldNetworkTimer>0
     ){
+
         return;
     }
 
-    zombieNetworkTimer=.08;
+
+    worldNetworkTimer=
+        .08;
+
 
     socket.emit(
         "worldState",
         {
-            wave:wave,
 
-            score:score,
+            wave,
 
-            enemiesToSpawn:
-                enemiesToSpawn,
+            score,
+
+            enemiesToSpawn,
 
             zombies:
                 zombies.map(
                     zombie=>({
-                        x:zombie.x,
-                        y:zombie.y,
+
+                        x:
+                            zombie.x,
+
+                        y:
+                            zombie.y,
 
                         type:
                             zombie.type,
@@ -2381,43 +3398,222 @@ function sendWorldState(dt){
 }
 
 
-/* ==================================================
+/* =====================================================
+   DEATH
+===================================================== */
+
+function showLocalDeath(){
+
+    if(
+        !player ||
+        !player.dead
+    ){
+
+        return;
+    }
+
+
+    if(
+        player.deathAnnounced
+    ){
+
+        return;
+    }
+
+
+    player.deathAnnounced=
+        true;
+
+
+    moveStick.reset();
+
+    aimStick.reset();
+
+
+    $("deadIndicator")
+    .classList
+    .remove(
+        "hidden"
+    );
+
+
+    /*
+    Quitamos controles del muerto,
+    pero NO detenemos running.
+    */
+
+    $("controls")
+    .classList
+    .add(
+        "hidden"
+    );
+}
+
+
+/* =====================================================
+   GAME OVER CHECK
+===================================================== */
+
+function checkGameOver(){
+
+    if(
+        gameOverTriggered
+    ){
+
+        return;
+    }
+
+
+    if(!player){
+        return;
+    }
+
+
+    /*
+    SOLO.
+    */
+
+    if(!multiplayer){
+
+        if(player.dead){
+
+            finishGame();
+        }
+
+        return;
+    }
+
+
+    /*
+    ONLINE:
+
+    Si aún no conocemos al compañero,
+    no declaramos Game Over.
+    */
+
+    if(!remotePlayer){
+
+        return;
+    }
+
+
+    if(
+        player.dead &&
+        remotePlayer.dead
+    ){
+
+        finishGame();
+    }
+}
+
+
+function finishGame(){
+
+    if(
+        gameOverTriggered
+    ){
+
+        return;
+    }
+
+
+    gameOverTriggered=
+        true;
+
+
+    running=false;
+
+
+    $("controls")
+    .classList
+    .add(
+        "hidden"
+    );
+
+
+    $("deadIndicator")
+    .classList
+    .add(
+        "hidden"
+    );
+
+
+    $("finalScore")
+    .textContent=
+        score+
+        " POINTS";
+
+
+    $("gameOverMenu")
+    .classList
+    .remove(
+        "hidden"
+    );
+}
+
+
+/* =====================================================
    RESET
-================================================== */
+===================================================== */
 
 function resetGame(){
 
     zombies=[];
+
     bullets=[];
 
     remotePlayer=null;
 
+
     wave=0;
+
     score=0;
 
     enemiesToSpawn=0;
 
+
     spawnTimer=0;
+
     nextWaveTimer=1;
 
+
     playerNetworkTimer=0;
-    zombieNetworkTimer=0;
+
+    worldNetworkTimer=0;
+
+
+    gameOverTriggered=
+        false;
+
 
     moveStick.reset();
+
     aimStick.reset();
+
 
     createMap();
 
+
     player=
         new Player();
+
+
+    $("deadIndicator")
+    .classList
+    .add(
+        "hidden"
+    );
+
+
+    updateCamera();
 
     updateHUD();
 }
 
 
-/* ==================================================
+/* =====================================================
    START
-================================================== */
+===================================================== */
 
 function startGame(
     fromNetwork=false
@@ -2426,57 +3622,71 @@ function startGame(
     if(!fromNetwork){
 
         multiplayer=false;
+
         isHost=false;
 
         currentRoom=null;
     }
 
+
     resetGame();
 
-    $("mainMenu")
-    .classList
-    .add("hidden");
 
-    $("multiplayerMenu")
-    .classList
-    .add("hidden");
+    [
+        "mainMenu",
+        "multiplayerMenu",
+        "lobbyMenu",
+        "pauseMenu",
+        "gameOverMenu"
+    ]
+    .forEach(
+        id=>
+            $(id)
+            .classList
+            .add(
+                "hidden"
+            )
+    );
 
-    $("lobbyMenu")
-    .classList
-    .add("hidden");
-
-    $("pauseMenu")
-    .classList
-    .add("hidden");
-
-    $("gameOverMenu")
-    .classList
-    .add("hidden");
 
     $("hud")
     .classList
-    .remove("hidden");
+    .remove(
+        "hidden"
+    );
+
 
     $("controls")
     .classList
-    .remove("hidden");
+    .remove(
+        "hidden"
+    );
+
 
     if(multiplayer){
 
         $("onlineIndicator")
         .classList
-        .remove("hidden");
+        .remove(
+            "hidden"
+        );
+
 
         $("roomHUD")
         .classList
-        .remove("hidden");
+        .remove(
+            "hidden"
+        );
+
 
         $("roomHUD")
         .textContent=
             (
                 isHost
-                ?"HOST · "
-                :"CLIENT · "
+                ?
+                "HOST · "
+                :
+                "CLIENT · "
             )
             +
             currentRoom;
@@ -2485,63 +3695,88 @@ function startGame(
 
         $("onlineIndicator")
         .classList
-        .add("hidden");
+        .add(
+            "hidden"
+        );
+
 
         $("roomHUD")
         .classList
-        .add("hidden");
+        .add(
+            "hidden"
+        );
     }
 
+
     running=true;
+
     paused=false;
+
 
     lastTime=
         performance.now();
 }
 
 
-/* ==================================================
+/* =====================================================
    MENU
-================================================== */
+===================================================== */
 
 function goToMenu(){
 
     running=false;
+
     paused=false;
+
 
     $("hud")
     .classList
-    .add("hidden");
+    .add(
+        "hidden"
+    );
+
 
     $("controls")
     .classList
-    .add("hidden");
+    .add(
+        "hidden"
+    );
 
-    $("pauseMenu")
-    .classList
-    .add("hidden");
 
-    $("gameOverMenu")
+    $("deadIndicator")
     .classList
-    .add("hidden");
+    .add(
+        "hidden"
+    );
 
-    $("multiplayerMenu")
-    .classList
-    .add("hidden");
 
-    $("lobbyMenu")
-    .classList
-    .add("hidden");
+    [
+        "pauseMenu",
+        "gameOverMenu",
+        "multiplayerMenu",
+        "lobbyMenu"
+    ]
+    .forEach(
+        id=>
+            $(id)
+            .classList
+            .add(
+                "hidden"
+            )
+    );
+
 
     $("mainMenu")
     .classList
-    .remove("hidden");
+    .remove(
+        "hidden"
+    );
 }
 
 
-/* ==================================================
+/* =====================================================
    UPDATE
-================================================== */
+===================================================== */
 
 function update(
     dt,
@@ -2552,8 +3787,10 @@ function update(
         return;
     }
 
+
     /*
-    Oleadas solamente SOLO/HOST.
+    HOST sigue simulando aunque
+    su personaje esté muerto.
     */
 
     if(
@@ -2565,7 +3802,9 @@ function update(
             nextWaveTimer>0
         ){
 
-            nextWaveTimer-=dt;
+            nextWaveTimer-=
+                dt;
+
 
             if(
                 nextWaveTimer<=0
@@ -2575,11 +3814,14 @@ function update(
             }
         }
 
+
         if(
             enemiesToSpawn>0
         ){
 
-            spawnTimer-=dt;
+            spawnTimer-=
+                dt;
+
 
             if(
                 spawnTimer<=0
@@ -2587,24 +3829,33 @@ function update(
 
                 spawnZombie();
 
+
                 enemiesToSpawn--;
+
 
                 spawnTimer=
                     Math.max(
                         .18,
-                        .75-wave*.03
+                        .75-
+                        wave*.03
                     );
             }
         }
     }
+
+
+    /*
+    Personaje local.
+    */
 
     player.update(
         dt,
         time
     );
 
+
     /*
-    IA solamente Host/Solo.
+    IA.
     */
 
     if(
@@ -2617,17 +3868,27 @@ function update(
             of zombies
         ){
 
-            zombie.update(dt);
+            zombie.update(
+                dt
+            );
         }
     }
+
+
+    /*
+    Bullets.
+    */
 
     for(
         const bullet
         of bullets
     ){
 
-        bullet.update(dt);
+        bullet.update(
+            dt
+        );
     }
+
 
     bullets=
         bullets.filter(
@@ -2635,21 +3896,40 @@ function update(
                 !bullet.dead
         );
 
+
     zombies=
         zombies.filter(
             zombie=>
                 !zombie.dead
         );
 
+
     /*
-    Nueva oleada.
+    Próxima oleada.
+
+    Si queda un jugador vivo,
+    las oleadas continúan.
     */
+
+    const someoneAlive=
+
+        !player.dead
+
+        ||
+
+        (
+            remotePlayer &&
+            !remotePlayer.dead
+        );
+
 
     if(
         (
             !multiplayer ||
             isHost
         )
+        &&
+        someoneAlive
         &&
         enemiesToSpawn===0
         &&
@@ -2658,44 +3938,51 @@ function update(
         nextWaveTimer<=0
     ){
 
-        nextWaveTimer=2.5;
+        nextWaveTimer=
+            2.5;
     }
+
+
+    /*
+    Multiplayer continúa enviando
+    estado incluso si el Host murió.
+    */
 
     if(multiplayer){
 
-        sendPlayerState(dt);
+        sendPlayerState(
+            dt
+        );
+
 
         if(isHost){
 
-            sendWorldState(dt);
+            sendWorldState(
+                dt
+            );
         }
     }
 
+
+    if(
+        player.dead
+    ){
+
+        showLocalDeath();
+    }
+
+
+    updateCamera();
+
     updateHUD();
 
-    if(player.dead){
-
-        running=false;
-
-        $("controls")
-        .classList
-        .add("hidden");
-
-        $("finalScore")
-        .textContent=
-            score+
-            " POINTS";
-
-        $("gameOverMenu")
-        .classList
-        .remove("hidden");
-    }
+    checkGameOver();
 }
 
 
-/* ==================================================
+/* =====================================================
    DRAW PLAYER
-================================================== */
+===================================================== */
 
 function drawPlayerCharacter(
     object,
@@ -2703,127 +3990,238 @@ function drawPlayerCharacter(
     label=""
 ){
 
-    if(
-        !object ||
-        object.dead
-    ){
+    if(!object){
         return;
     }
 
+
     ctx.save();
+
 
     ctx.translate(
         object.x,
         object.y
     );
 
+
     ctx.rotate(
         object.rotation||0
     );
+
+
+    /*
+    Dead body.
+    */
+
+    if(object.dead){
+
+        ctx.globalAlpha=
+            .48;
+
+        ctx.rotate(
+            Math.PI/2
+        );
+    }
+
 
     /*
     Legs.
     */
 
-    ctx.fillStyle="#242925";
+    ctx.fillStyle=
+        "#242925";
+
 
     ctx.fillRect(
-        -13,-11,
-        19,8
+        -13,
+        -11,
+        19,
+        8
     );
 
+
     ctx.fillRect(
-        -13,4,
-        19,8
+        -13,
+        4,
+        19,
+        8
     );
+
 
     /*
     Body.
     */
 
-    ctx.fillStyle=color;
+    ctx.fillStyle=
+        color;
+
 
     ctx.fillRect(
-        -14,-14,
-        28,28
+        -14,
+        -14,
+        28,
+        28
     );
+
 
     /*
     Head.
     */
 
-    ctx.fillStyle="#d2aa84";
+    ctx.fillStyle=
+        "#d2aa84";
+
 
     ctx.fillRect(
-        4,-11,
-        18,22
+        4,
+        -11,
+        18,
+        22
     );
+
 
     /*
     Weapon.
     */
 
-    ctx.fillStyle="#171918";
+    const weaponIndex=
+        Math.floor(
+            clamp(
+                Number(
+                    object.weaponIndex
+                )||0,
+                0,
+                3
+            )
+        );
+
+
+    const weapon=
+        WEAPONS[
+            weaponIndex
+        ];
+
+
+    ctx.fillStyle=
+        "#171918";
+
 
     ctx.fillRect(
-        10,-4,
-        31,8
+        10,
+        -4,
+        weapon.length,
+        8
     );
+
 
     ctx.restore();
 
+
     if(label){
 
-        ctx.textAlign="center";
+        ctx.save();
+
+
+        ctx.textAlign=
+            "center";
+
 
         ctx.font=
             "bold 12px Arial";
 
-        ctx.fillStyle="#ddd";
+
+        ctx.fillStyle=
+            object.dead
+            ?
+            "#a15d5d"
+            :
+            "#ddd";
+
 
         ctx.fillText(
+            object.dead
+            ?
+            label+
+            " · DEAD"
+            :
             label,
+
             object.x,
-            object.y-28
+
+            object.y-
+            30
         );
 
+
         /*
-        Remote health.
+        Health.
         */
 
         ctx.fillStyle=
-            "rgba(0,0,0,.6)";
+            "rgba(0,0,0,.65)";
+
 
         ctx.fillRect(
-            object.x-25,
-            object.y-22,
+            object.x-
+            25,
+
+            object.y-
+            23,
+
             50,
+
             4
         );
+
 
         ctx.fillStyle=
             "#54a95e";
 
+
         ctx.fillRect(
-            object.x-25,
-            object.y-22,
+            object.x-
+            25,
+
+            object.y-
+            23,
+
             50*
             clamp(
-                object.health/100,
+                (
+                    Number(
+                        object.health
+                    )||0
+                )
+                /100,
+
                 0,
                 1
             ),
+
             4
         );
+
+
+        ctx.restore();
     }
 }
 
 
-/* ==================================================
+/* =====================================================
    DRAW
-================================================== */
+===================================================== */
 
 function draw(){
+
+    ctx.setTransform(
+        dpr,
+        0,
+        0,
+        dpr,
+        0,
+        0
+    );
+
 
     ctx.clearRect(
         0,
@@ -2832,7 +4230,10 @@ function draw(){
         screenH
     );
 
-    ctx.fillStyle="#080a09";
+
+    ctx.fillStyle=
+        "#080a09";
+
 
     ctx.fillRect(
         0,
@@ -2841,23 +4242,71 @@ function draw(){
         screenH
     );
 
+
+    updateCamera();
+
+
+    /*
+    Camera transformation.
+    */
+
+    const viewportWidth=
+        camera.viewW*
+        camera.zoom;
+
+
+    const viewportHeight=
+        camera.viewH*
+        camera.zoom;
+
+
+    const displayOffsetX=
+        (
+            screenW-
+            viewportWidth
+        )
+        /2;
+
+
+    const displayOffsetY=
+        (
+            screenH-
+            viewportHeight
+        )
+        /2;
+
+
     ctx.save();
 
+
     ctx.translate(
-        offsetX,
-        offsetY
+        displayOffsetX,
+        displayOffsetY
     );
 
+
     ctx.scale(
-        worldScale,
-        worldScale
+        camera.zoom,
+        camera.zoom
     );
+
+
+    ctx.translate(
+        -camera.x+
+        camera.viewW/2,
+
+        -camera.y+
+        camera.viewH/2
+    );
+
 
     /*
     Floor.
     */
 
-    ctx.fillStyle="#292e2a";
+    ctx.fillStyle=
+        "#292e2a";
+
 
     ctx.fillRect(
         0,
@@ -2866,50 +4315,62 @@ function draw(){
         WORLD_H
     );
 
+
+    /*
+    Floor grid.
+    */
+
     ctx.strokeStyle=
         "rgba(255,255,255,.025)";
 
+
+    ctx.lineWidth=
+        1;
+
+
     for(
-        let px=0;
-        px<WORLD_W;
-        px+=45
+        let gridX=0;
+        gridX<WORLD_W;
+        gridX+=45
     ){
 
         ctx.beginPath();
 
         ctx.moveTo(
-            px,
+            gridX,
             0
         );
 
         ctx.lineTo(
-            px,
+            gridX,
             WORLD_H
         );
 
         ctx.stroke();
     }
 
+
     for(
-        let py=0;
-        py<WORLD_H;
-        py+=45
+        let gridY=0;
+        gridY<WORLD_H;
+        gridY+=45
     ){
 
         ctx.beginPath();
 
         ctx.moveTo(
             0,
-            py
+            gridY
         );
 
         ctx.lineTo(
             WORLD_W,
-            py
+            gridY
         );
 
         ctx.stroke();
     }
+
 
     /*
     Walls.
@@ -2920,7 +4381,9 @@ function draw(){
         of walls
     ){
 
-        ctx.fillStyle="#4c514c";
+        ctx.fillStyle=
+            "#4c514c";
+
 
         ctx.fillRect(
             wall.x,
@@ -2929,7 +4392,10 @@ function draw(){
             wall.height
         );
 
-        ctx.fillStyle="#666c66";
+
+        ctx.fillStyle=
+            "#666c66";
+
 
         ctx.fillRect(
             wall.x,
@@ -2938,6 +4404,7 @@ function draw(){
             4
         );
     }
+
 
     /*
     Zombies.
@@ -2948,19 +4415,24 @@ function draw(){
         of zombies
     ){
 
-        if(zombie.dead){
+        if(
+            zombie.dead
+        ){
             continue;
         }
 
+
         if(
-            zombie.type==="tank"
+            zombie.type===
+            "tank"
         ){
 
             ctx.fillStyle=
                 "#53604c";
 
         }else if(
-            zombie.type==="fast"
+            zombie.type===
+            "fast"
         ){
 
             ctx.fillStyle=
@@ -2971,6 +4443,7 @@ function draw(){
             ctx.fillStyle=
                 "#68775f";
         }
+
 
         ctx.fillRect(
             zombie.x-
@@ -2983,7 +4456,54 @@ function draw(){
 
             zombie.radius*2
         );
+
+
+        /*
+        Zombie health.
+        */
+
+        if(
+            zombie.health<
+            zombie.maxHealth
+        ){
+
+            ctx.fillStyle=
+                "rgba(0,0,0,.6)";
+
+
+            ctx.fillRect(
+                zombie.x-16,
+                zombie.y-
+                zombie.radius-
+                8,
+                32,
+                3
+            );
+
+
+            ctx.fillStyle=
+                "#a94646";
+
+
+            ctx.fillRect(
+                zombie.x-16,
+                zombie.y-
+                zombie.radius-
+                8,
+
+                32*
+                clamp(
+                    zombie.health/
+                    zombie.maxHealth,
+                    0,
+                    1
+                ),
+
+                3
+            );
+        }
     }
+
 
     /*
     Players.
@@ -2994,11 +4514,13 @@ function draw(){
         "#56735b"
     );
 
+
     drawPlayerCharacter(
         remotePlayer,
         "#496f8b",
         "PLAYER 2"
     );
+
 
     /*
     Bullets.
@@ -3012,30 +4534,56 @@ function draw(){
         ctx.strokeStyle=
             "#f0dc91";
 
-        ctx.lineWidth=2;
+
+        ctx.lineWidth=
+            2.4;
+
 
         ctx.beginPath();
+
 
         ctx.moveTo(
             bullet.oldX,
             bullet.oldY
         );
 
+
         ctx.lineTo(
             bullet.x,
             bullet.y
         );
 
+
         ctx.stroke();
+
+
+        ctx.fillStyle=
+            "#fff4b0";
+
+
+        ctx.beginPath();
+
+
+        ctx.arc(
+            bullet.x,
+            bullet.y,
+            2.5,
+            0,
+            Math.PI*2
+        );
+
+
+        ctx.fill();
     }
+
 
     ctx.restore();
 }
 
 
-/* ==================================================
+/* =====================================================
    HUD
-================================================== */
+===================================================== */
 
 function updateHUD(){
 
@@ -3043,47 +4591,65 @@ function updateHUD(){
         return;
     }
 
+
     $("healthBar")
     .style
     .width=
+
         (
             player.health/
             player.maxHealth*
             100
         )
-        +"%";
+        +
+        "%";
+
 
     $("ammoText")
     .textContent=
+
         player.ammo[
             player.weaponIndex
         ]
+
         +
+
         " / "
+
         +
+
         player.reserve[
             player.weaponIndex
         ];
 
+
     $("weaponText")
     .textContent=
+
         WEAPONS[
             player.weaponIndex
         ].name;
 
+
     $("waveText")
     .textContent=
+
         "WAVE "+
         wave;
 
+
     $("enemyText")
     .textContent=
+
         (
             zombies.length+
             enemiesToSpawn
         )
+
         +
+
         " ENEMIES";
+
 
     $("scoreText")
     .textContent=
@@ -3091,24 +4657,32 @@ function updateHUD(){
 }
 
 
-/* ==================================================
+/* =====================================================
    MESSAGE
-================================================== */
+===================================================== */
 
 let messageTimeout=null;
 
-function showMessage(text){
+
+function showMessage(
+    text
+){
 
     $("message")
-    .textContent=text;
+    .textContent=
+        text;
+
 
     $("message")
     .style
-    .opacity="1";
+    .opacity=
+        "1";
+
 
     clearTimeout(
         messageTimeout
     );
+
 
     messageTimeout=
         setTimeout(
@@ -3116,7 +4690,8 @@ function showMessage(text){
 
                 $("message")
                 .style
-                .opacity="0";
+                .opacity=
+                    "0";
 
             },
             900
@@ -3124,9 +4699,9 @@ function showMessage(text){
 }
 
 
-/* ==================================================
+/* =====================================================
    LOOP
-================================================== */
+===================================================== */
 
 function gameLoop(time){
 
@@ -3134,15 +4709,27 @@ function gameLoop(time){
         gameLoop
     );
 
+
     if(
         !running ||
         paused
     ){
 
-        lastTime=time;
+        lastTime=
+            time;
+
+        /*
+        Aun dibujamos para mantener
+        orientación/cámara correcta.
+        */
+
+        if(running){
+            draw();
+        }
 
         return;
     }
+
 
     let dt=
         (
@@ -3151,7 +4738,10 @@ function gameLoop(time){
         )
         /1000;
 
-    lastTime=time;
+
+    lastTime=
+        time;
+
 
     dt=
         Math.min(
@@ -3162,22 +4752,25 @@ function gameLoop(time){
             )
         );
 
+
     update(
         dt,
         time
     );
 
+
     draw();
 }
+
 
 requestAnimationFrame(
     gameLoop
 );
 
 
-/* ==================================================
-   BUTTONS
-================================================== */
+/* =====================================================
+   BUTTON HELPER
+===================================================== */
 
 function bindButton(
     id,
@@ -3187,9 +4780,9 @@ function bindButton(
     $(id)
     .addEventListener(
         "click",
-        e=>{
+        event=>{
 
-            e.preventDefault();
+            event.preventDefault();
 
             callback();
         }
@@ -3197,321 +4790,468 @@ function bindButton(
 }
 
 
-bindButton(
-"playButton",
-()=>{
-
-    startGame(false);
-});
-
+/* =====================================================
+   MENU BUTTONS
+===================================================== */
 
 bindButton(
-"multiplayerButton",
-()=>{
+    "playButton",
+    ()=>{
 
-    $("mainMenu")
-    .classList
-    .add("hidden");
-
-    $("multiplayerMenu")
-    .classList
-    .remove("hidden");
-});
-
-
-bindButton(
-"multiplayerBackButton",
-()=>{
-
-    $("multiplayerMenu")
-    .classList
-    .add("hidden");
-
-    $("mainMenu")
-    .classList
-    .remove("hidden");
-});
-
-
-bindButton(
-"createRoomButton",
-()=>{
-
-    if(
-        !socket ||
-        !socket.connected
-    ){
-
-        $("connectionStatus")
-        .textContent=
-            "🔴 No connection.";
-
-        return;
-    }
-
-    socket.emit(
-        "createRoom",
-        response=>{
-
-            if(
-                !response ||
-                !response.ok
-            ){
-                return;
-            }
-
-            multiplayer=true;
-            isHost=true;
-
-            currentRoom=
-                response.code;
-
-            connectedPlayers=1;
-
-            $("roomCode")
-            .textContent=
-                currentRoom;
-
-            $("lobbyStatus")
-            .innerHTML=
-                "HOST CREATED<br><br>Waiting for Player 2...";
-
-            $("startOnlineButton")
-            .classList
-            .add("hidden");
-
-            $("multiplayerMenu")
-            .classList
-            .add("hidden");
-
-            $("lobbyMenu")
-            .classList
-            .remove("hidden");
-        }
-    );
-});
-
-
-bindButton(
-"joinRoomButton",
-()=>{
-
-    if(
-        !socket ||
-        !socket.connected
-    ){
-        return;
-    }
-
-    const code=
-        $("roomInput")
-        .value
-        .trim()
-        .toUpperCase();
-
-    if(
-        code.length!==5
-    ){
-        return;
-    }
-
-    socket.emit(
-        "joinRoom",
-        code,
-        response=>{
-
-            if(
-                !response ||
-                !response.ok
-            ){
-
-                $("connectionStatus")
-                .textContent=
-                    "❌ "+
-                    (
-                        response?.message ||
-                        "Could not join."
-                    );
-
-                return;
-            }
-
-            multiplayer=true;
-            isHost=false;
-
-            currentRoom=
-                response.code;
-
-            connectedPlayers=2;
-
-            $("roomCode")
-            .textContent=
-                currentRoom;
-
-            $("lobbyStatus")
-            .innerHTML=
-                "🟢 CONNECTED<br><br>Waiting for Host to start...";
-
-            $("multiplayerMenu")
-            .classList
-            .add("hidden");
-
-            $("lobbyMenu")
-            .classList
-            .remove("hidden");
-        }
-    );
-});
-
-
-bindButton(
-"startOnlineButton",
-()=>{
-
-    if(
-        isHost &&
-        connectedPlayers>=2
-    ){
-
-        socket.emit(
-            "startMatch"
+        startGame(
+            false
         );
     }
-});
-
-
-bindButton(
-"leaveLobbyButton",
-()=>{
-
-    location.reload();
-});
-
-
-bindButton(
-"changeWeapon",
-()=>{
-
-    if(
-        player &&
-        running &&
-        !paused
-    ){
-
-        player.changeWeapon();
-    }
-});
-
-
-bindButton(
-"reload",
-()=>{
-
-    if(
-        player &&
-        running &&
-        !paused
-    ){
-
-        player.reload();
-    }
-});
-
-
-bindButton(
-"pauseButton",
-()=>{
-
-    if(!running){
-        return;
-    }
-
-    paused=!paused;
-
-    $("pauseMenu")
-    .classList
-    .toggle(
-        "hidden",
-        !paused
-    );
-});
-
-
-bindButton(
-"continueButton",
-()=>{
-
-    paused=false;
-
-    $("pauseMenu")
-    .classList
-    .add("hidden");
-});
-
-
-bindButton(
-"pauseMenuButton",
-goToMenu
 );
 
 
 bindButton(
-"gameOverMenuButton",
-goToMenu
+    "multiplayerButton",
+    ()=>{
+
+        $("mainMenu")
+        .classList
+        .add(
+            "hidden"
+        );
+
+
+        $("multiplayerMenu")
+        .classList
+        .remove(
+            "hidden"
+        );
+    }
 );
 
 
 bindButton(
-"restartButton",
-()=>{
+    "multiplayerBackButton",
+    ()=>{
 
-    if(multiplayer){
+        $("multiplayerMenu")
+        .classList
+        .add(
+            "hidden"
+        );
+
+
+        $("mainMenu")
+        .classList
+        .remove(
+            "hidden"
+        );
+    }
+);
+
+
+/* =====================================================
+   CREATE ROOM
+===================================================== */
+
+bindButton(
+    "createRoomButton",
+    ()=>{
+
+        if(
+            !socket ||
+            !socket.connected
+        ){
+
+            $("connectionStatus")
+            .textContent=
+                "🔴 No connection.";
+
+            return;
+        }
+
+
+        socket.emit(
+            "createRoom",
+            response=>{
+
+                if(
+                    !response ||
+                    !response.ok
+                ){
+
+                    return;
+                }
+
+
+                multiplayer=
+                    true;
+
+
+                isHost=
+                    true;
+
+
+                currentRoom=
+                    response.code;
+
+
+                connectedPlayers=
+                    1;
+
+
+                $("roomCode")
+                .textContent=
+                    currentRoom;
+
+
+                $("lobbyStatus")
+                .innerHTML=
+                    "HOST CREATED<br><br>Waiting for Player 2...";
+
+
+                $("startOnlineButton")
+                .classList
+                .add(
+                    "hidden"
+                );
+
+
+                $("multiplayerMenu")
+                .classList
+                .add(
+                    "hidden"
+                );
+
+
+                $("lobbyMenu")
+                .classList
+                .remove(
+                    "hidden"
+                );
+            }
+        );
+    }
+);
+
+
+/* =====================================================
+   JOIN
+===================================================== */
+
+bindButton(
+    "joinRoomButton",
+    ()=>{
+
+        if(
+            !socket ||
+            !socket.connected
+        ){
+
+            return;
+        }
+
+
+        const code=
+            $("roomInput")
+            .value
+            .trim()
+            .toUpperCase();
+
+
+        if(
+            code.length!==5
+        ){
+
+            $("connectionStatus")
+            .textContent=
+                "Enter the 5-character code.";
+
+            return;
+        }
+
+
+        socket.emit(
+            "joinRoom",
+            code,
+            response=>{
+
+                if(
+                    !response ||
+                    !response.ok
+                ){
+
+                    $("connectionStatus")
+                    .textContent=
+                        "❌ "+
+                        (
+                            response?.message
+                            ||
+                            "Could not join."
+                        );
+
+                    return;
+                }
+
+
+                multiplayer=
+                    true;
+
+
+                isHost=
+                    false;
+
+
+                currentRoom=
+                    response.code;
+
+
+                connectedPlayers=
+                    2;
+
+
+                $("roomCode")
+                .textContent=
+                    currentRoom;
+
+
+                $("lobbyStatus")
+                .innerHTML=
+                    "🟢 CONNECTED<br><br>Waiting for Host to start...";
+
+
+                $("multiplayerMenu")
+                .classList
+                .add(
+                    "hidden"
+                );
+
+
+                $("lobbyMenu")
+                .classList
+                .remove(
+                    "hidden"
+                );
+            }
+        );
+    }
+);
+
+
+/* =====================================================
+   START ONLINE
+===================================================== */
+
+bindButton(
+    "startOnlineButton",
+    ()=>{
+
+        if(
+            isHost &&
+            connectedPlayers>=2
+        ){
+
+            socket.emit(
+                "startMatch"
+            );
+        }
+    }
+);
+
+
+/* =====================================================
+   LEAVE
+===================================================== */
+
+bindButton(
+    "leaveLobbyButton",
+    ()=>{
+
+        if(
+            socket &&
+            socket.connected
+        ){
+
+            socket.emit(
+                "leaveRoom"
+            );
+        }
+
+
+        setTimeout(
+            ()=>location.reload(),
+            100
+        );
+    }
+);
+
+
+/* =====================================================
+   WEAPON
+===================================================== */
+
+bindButton(
+    "changeWeapon",
+    ()=>{
+
+        if(
+            player &&
+            running &&
+            !paused &&
+            !player.dead
+        ){
+
+            player.changeWeapon();
+        }
+    }
+);
+
+
+/* =====================================================
+   RELOAD
+===================================================== */
+
+bindButton(
+    "reload",
+    ()=>{
+
+        if(
+            player &&
+            running &&
+            !paused &&
+            !player.dead
+        ){
+
+            player.reload();
+        }
+    }
+);
+
+
+/* =====================================================
+   PAUSE
+===================================================== */
+
+bindButton(
+    "pauseButton",
+    ()=>{
+
+        if(
+            !running ||
+            (
+                player &&
+                player.dead
+            )
+        ){
+
+            return;
+        }
+
+
+        paused=
+            !paused;
+
+
+        $("pauseMenu")
+        .classList
+        .toggle(
+            "hidden",
+            !paused
+        );
+    }
+);
+
+
+bindButton(
+    "continueButton",
+    ()=>{
+
+        paused=false;
+
+
+        $("pauseMenu")
+        .classList
+        .add(
+            "hidden"
+        );
+    }
+);
+
+
+bindButton(
+    "pauseMenuButton",
+    ()=>{
 
         goToMenu();
-
-    }else{
-
-        startGame(false);
     }
-});
+);
 
 
-/* ==================================================
+bindButton(
+    "gameOverMenuButton",
+    ()=>{
+
+        goToMenu();
+    }
+);
+
+
+bindButton(
+    "restartButton",
+    ()=>{
+
+        /*
+        Online vuelve al menú porque
+        debe crearse una partida nueva.
+        */
+
+        if(multiplayer){
+
+            goToMenu();
+
+        }else{
+
+            startGame(
+                false
+            );
+        }
+    }
+);
+
+
+/* =====================================================
    MOBILE
-================================================== */
+===================================================== */
 
 document.addEventListener(
-"touchmove",
-e=>{
+    "touchmove",
+    event=>{
 
-    e.preventDefault();
+        event.preventDefault();
 
-},
-{
-    passive:false
-});
+    },
+    {
+        passive:false
+    }
+);
 
 
 document.addEventListener(
-"contextmenu",
-e=>{
+    "contextmenu",
+    event=>{
 
-    e.preventDefault();
+        event.preventDefault();
+    }
+);
 
-});
 
-
-/* ==================================================
+/* =====================================================
    INITIAL
-================================================== */
+===================================================== */
 
 createMap();
+
+updateCamera();
 
 draw();
 
 })();
-
 </script>
 
 </body>
-</html>
+    </html>
