@@ -1,0 +1,3829 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Dead Rooms Mobile Multiplayer</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+    -webkit-user-select:none;
+}
+
+html,body{
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#080a09;
+    color:white;
+    font-family:Arial,Helvetica,sans-serif;
+    touch-action:none;
+}
+
+#game{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    display:block;
+    background:#292e2a;
+}
+
+.hidden{display:none !important}
+
+/* =========================
+   OVERLAYS / MENUS
+========================= */
+
+.overlay{
+    position:fixed;
+    inset:0;
+    z-index:50;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    background:
+        radial-gradient(circle at center,
+        rgba(45,55,47,.75),
+        rgba(4,6,5,.97));
+}
+
+.panel{
+    width:min(90vw,500px);
+    padding:30px;
+    text-align:center;
+    border-radius:20px;
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(13,16,14,.96);
+    box-shadow:0 25px 80px rgba(0,0,0,.8);
+}
+
+.logo{
+    font-size:clamp(42px,10vw,72px);
+    line-height:.82;
+    letter-spacing:-4px;
+    font-weight:900;
+    color:#deded8;
+    text-shadow:0 5px 0 #555,0 10px 30px black;
+}
+
+.logo span{color:#b33333}
+
+.subtitle{
+    margin-top:18px;
+    color:#929a94;
+    font-size:11px;
+    letter-spacing:4px;
+}
+
+.menuButton{
+    width:100%;
+    margin-top:18px;
+    padding:17px;
+    border-radius:10px;
+    border:1px solid #4a504b;
+    background:#292e2a;
+    color:white;
+    font-size:17px;
+    font-weight:900;
+    touch-action:manipulation;
+}
+
+.menuButton:active{
+    transform:scale(.97);
+    background:#a83232;
+}
+
+.menuButton.primary{
+    background:#8f2929;
+    border-color:#c04444;
+}
+
+.menuButton:disabled{
+    opacity:.4;
+    transform:none;
+    background:#292e2a;
+}
+
+.instructions{
+    margin-top:22px;
+    color:#8d958f;
+    font-size:12px;
+    line-height:1.7;
+}
+
+.roomInput{
+    width:100%;
+    margin-top:20px;
+    padding:17px;
+    border-radius:10px;
+    border:1px solid #4a504b;
+    outline:none;
+    background:#1d211e;
+    color:white;
+    text-align:center;
+    text-transform:uppercase;
+    font-size:26px;
+    font-weight:900;
+    letter-spacing:7px;
+    user-select:text;
+    -webkit-user-select:text;
+}
+
+.roomInput:focus{border-color:#b33333}
+
+.roomCode{
+    margin:22px 0 8px;
+    padding:18px;
+    border-radius:12px;
+    border:1px solid #565d57;
+    background:#202522;
+    color:#d8b557;
+    font-size:clamp(30px,9vw,46px);
+    font-weight:900;
+    letter-spacing:8px;
+}
+
+.status{
+    min-height:20px;
+    margin-top:14px;
+    color:#9ca59f;
+    font-size:12px;
+    line-height:1.5;
+}
+
+.status.good{color:#6bd181}
+.status.bad{color:#dc6565}
+
+/* =========================
+   HUD
+========================= */
+
+#hud{
+    position:fixed;
+    inset:0;
+    z-index:10;
+    pointer-events:none;
+}
+
+#playerHUD{
+    position:absolute;
+    left:12px;
+    top:12px;
+    width:210px;
+    padding:10px 12px;
+    border-radius:10px;
+    background:rgba(5,7,6,.75);
+    border:1px solid rgba(255,255,255,.1);
+}
+
+#healthBackground{
+    width:100%;
+    height:9px;
+    overflow:hidden;
+    border-radius:10px;
+    background:#272727;
+}
+
+#healthBar{
+    width:100%;
+    height:100%;
+    background:#ba3434;
+}
+
+#ammoText{
+    margin-top:6px;
+    font-size:19px;
+    font-weight:900;
+}
+
+#weaponText{
+    margin-top:2px;
+    color:#a2aaa4;
+    font-size:10px;
+}
+
+#centerHUD{
+    position:absolute;
+    top:12px;
+    left:50%;
+    transform:translateX(-50%);
+    text-align:center;
+    text-shadow:0 2px 5px black;
+}
+
+#waveText{
+    font-size:18px;
+    font-weight:900;
+}
+
+#enemyText{
+    margin-top:2px;
+    color:#b7bdb9;
+    font-size:10px;
+}
+
+#scoreText{
+    position:absolute;
+    top:15px;
+    right:15px;
+    font-size:17px;
+    font-weight:900;
+}
+
+#message{
+    position:absolute;
+    top:34%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    font-size:clamp(30px,8vw,60px);
+    font-weight:900;
+    text-align:center;
+    text-shadow:0 5px 20px black;
+    opacity:0;
+    transition:opacity .2s;
+}
+
+#onlineIndicator{
+    position:absolute;
+    left:12px;
+    top:82px;
+    padding:6px 9px;
+    border-radius:8px;
+    background:rgba(5,7,6,.78);
+    border:1px solid rgba(255,255,255,.08);
+    color:#70d887;
+    font-size:10px;
+    font-weight:900;
+}
+
+#roomHUD{
+    position:absolute;
+    left:12px;
+    top:109px;
+    color:#aeb5b0;
+    font-size:9px;
+}
+
+/* =========================
+   CONTROLS
+========================= */
+
+#controls{
+    position:fixed;
+    inset:0;
+    z-index:20;
+    pointer-events:none;
+}
+
+.joystick{
+    position:absolute;
+    bottom:22px;
+    width:130px;
+    height:130px;
+    border-radius:50%;
+    background:rgba(255,255,255,.055);
+    border:2px solid rgba(255,255,255,.14);
+    pointer-events:auto;
+    touch-action:none;
+}
+
+#moveJoystick{left:22px}
+#aimJoystick{right:22px}
+
+.joystickLabel{
+    position:absolute;
+    left:0;
+    top:50%;
+    width:100%;
+    transform:translateY(-50%);
+    text-align:center;
+    color:rgba(255,255,255,.25);
+    font-size:9px;
+}
+
+.knob{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:54px;
+    height:54px;
+    margin-left:-27px;
+    margin-top:-27px;
+    border-radius:50%;
+    background:rgba(255,255,255,.22);
+    border:2px solid rgba(255,255,255,.2);
+    box-shadow:0 5px 15px rgba(0,0,0,.35);
+    pointer-events:none;
+}
+
+.action{
+    position:absolute;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    border:2px solid rgba(255,255,255,.15);
+    background:rgba(30,35,31,.8);
+    color:white;
+    font-weight:900;
+    pointer-events:auto;
+    touch-action:manipulation;
+}
+
+.action:active{background:rgba(165,50,50,.85)}
+
+#changeWeapon{
+    width:58px;
+    height:58px;
+    right:165px;
+    bottom:28px;
+    font-size:22px;
+}
+
+#reload{
+    width:52px;
+    height:52px;
+    right:172px;
+    bottom:98px;
+    font-size:9px;
+}
+
+#pauseButton{
+    width:42px;
+    height:42px;
+    top:55px;
+    right:15px;
+    font-size:15px;
+}
+
+@media(max-height:450px){
+    .joystick{
+        width:110px;
+        height:110px;
+    }
+
+    #changeWeapon{right:145px}
+
+    #reload{
+        right:150px;
+        bottom:85px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+<!-- HUD -->
+<div id="hud" class="hidden">
+
+    <div id="playerHUD">
+        <div id="healthBackground">
+            <div id="healthBar"></div>
+        </div>
+
+        <div id="ammoText">12 / 120</div>
+        <div id="weaponText">PISTOL</div>
+    </div>
+
+    <div id="centerHUD">
+        <div id="waveText">WAVE 1</div>
+        <div id="enemyText">0 ENEMIES</div>
+    </div>
+
+    <div id="scoreText">0</div>
+    <div id="message"></div>
+
+    <div id="onlineIndicator" class="hidden">
+        🟢 ONLINE
+    </div>
+
+    <div id="roomHUD" class="hidden"></div>
+</div>
+
+<!-- CONTROLS -->
+<div id="controls" class="hidden">
+
+    <div id="moveJoystick" class="joystick">
+        <div class="joystickLabel">MOVE</div>
+        <div id="moveKnob" class="knob"></div>
+    </div>
+
+    <div id="aimJoystick" class="joystick">
+        <div class="joystickLabel">AIM / FIRE</div>
+        <div id="aimKnob" class="knob"></div>
+    </div>
+
+    <div id="changeWeapon" class="action">⇄</div>
+    <div id="reload" class="action">RELOAD</div>
+    <div id="pauseButton" class="action">II</div>
+
+</div>
+
+<!-- MAIN MENU -->
+<div id="mainMenu" class="overlay">
+
+    <div class="panel">
+
+        <div class="logo">
+            DEAD<br>
+            <span>ROOMS</span>
+        </div>
+
+        <div class="subtitle">
+            MOBILE ZOMBIE ARENA
+        </div>
+
+        <button id="playButton" class="menuButton primary">
+            SOLO
+        </button>
+
+        <button id="multiplayerButton" class="menuButton">
+            MULTIPLAYER
+        </button>
+
+        <div class="instructions">
+            Joystick izquierdo: moverse<br>
+            Joystick derecho: apuntar y disparar<br>
+            ⇄ cambiar arma<br>
+            RELOAD recargar
+        </div>
+
+    </div>
+</div>
+
+<!-- MULTIPLAYER MENU -->
+<div id="multiplayerMenu" class="overlay hidden">
+
+    <div class="panel">
+
+        <div class="logo" style="font-size:44px">
+            MULTI<span>PLAYER</span>
+        </div>
+
+        <div class="subtitle">
+            PLAY WITH A FRIEND
+        </div>
+
+        <button id="createRoomButton" class="menuButton primary">
+            CREATE ROOM
+        </button>
+
+        <input
+            id="roomInput"
+            class="roomInput"
+            type="text"
+            maxlength="5"
+            placeholder="CODE"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false">
+
+        <button id="joinRoomButton" class="menuButton">
+            JOIN ROOM
+        </button>
+
+        <button id="multiplayerBackButton" class="menuButton">
+            BACK
+        </button>
+
+        <div id="connectionStatus" class="status">
+            Connecting to server...
+        </div>
+
+    </div>
+</div>
+
+<!-- LOBBY -->
+<div id="lobbyMenu" class="overlay hidden">
+
+    <div class="panel">
+
+        <div class="logo" style="font-size:45px">
+            ROOM
+        </div>
+
+        <div class="subtitle">
+            SHARE THIS CODE
+        </div>
+
+        <div id="roomCode" class="roomCode">
+            -----
+        </div>
+
+        <div id="lobbyStatus" class="instructions">
+            Waiting for another player...
+        </div>
+
+        <button id="startOnlineButton"
+                class="menuButton primary hidden">
+            START GAME
+        </button>
+
+        <button id="leaveLobbyButton"
+                class="menuButton">
+            LEAVE ROOM
+        </button>
+
+    </div>
+</div>
+
+<!-- PAUSE -->
+<div id="pauseMenu" class="overlay hidden">
+
+    <div class="panel">
+
+        <div class="logo" style="font-size:45px">
+            PAUSED
+        </div>
+
+        <button id="continueButton" class="menuButton">
+            CONTINUE
+        </button>
+
+        <button id="pauseMenuButton" class="menuButton">
+            MAIN MENU
+        </button>
+
+    </div>
+</div>
+
+<!-- GAME OVER -->
+<div id="gameOverMenu" class="overlay hidden">
+
+    <div class="panel">
+
+        <div class="logo" style="font-size:42px">
+            GAME
+            <span>OVER</span>
+        </div>
+
+        <div id="finalScore"
+             style="
+             margin:22px;
+             font-size:34px;
+             font-weight:900;
+             color:#d8b557;">
+            0 POINTS
+        </div>
+
+        <button id="restartButton" class="menuButton">
+            PLAY AGAIN
+        </button>
+
+        <button id="gameOverMenuButton" class="menuButton">
+            MAIN MENU
+        </button>
+
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+(function(){
+
+"use strict";
+
+/* =====================================================
+   DOM
+===================================================== */
+
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+
+const mainMenu=document.getElementById("mainMenu");
+const multiplayerMenu=document.getElementById("multiplayerMenu");
+const lobbyMenu=document.getElementById("lobbyMenu");
+const pauseMenu=document.getElementById("pauseMenu");
+const gameOverMenu=document.getElementById("gameOverMenu");
+
+const hud=document.getElementById("hud");
+const controls=document.getElementById("controls");
+
+const healthBar=document.getElementById("healthBar");
+const ammoText=document.getElementById("ammoText");
+const weaponText=document.getElementById("weaponText");
+const waveText=document.getElementById("waveText");
+const enemyText=document.getElementById("enemyText");
+const scoreText=document.getElementById("scoreText");
+const message=document.getElementById("message");
+const finalScore=document.getElementById("finalScore");
+
+const connectionStatus=document.getElementById("connectionStatus");
+const lobbyStatus=document.getElementById("lobbyStatus");
+const roomCodeElement=document.getElementById("roomCode");
+const roomInput=document.getElementById("roomInput");
+const startOnlineButton=document.getElementById("startOnlineButton");
+const onlineIndicator=document.getElementById("onlineIndicator");
+const roomHUD=document.getElementById("roomHUD");
+
+/* =====================================================
+   CANVAS
+===================================================== */
+
+let W=window.innerWidth;
+let H=window.innerHeight;
+
+function resizeCanvas(){
+
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+
+    W=window.innerWidth;
+    H=window.innerHeight;
+
+    canvas.width=Math.floor(W*dpr);
+    canvas.height=Math.floor(H*dpr);
+
+    canvas.style.width=W+"px";
+    canvas.style.height=H+"px";
+
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+resizeCanvas();
+
+window.addEventListener("resize",resizeCanvas);
+
+/* =====================================================
+   HELPERS
+===================================================== */
+
+function rand(a,b){
+    return Math.random()*(b-a)+a;
+}
+
+function clamp(v,min,max){
+    return Math.max(min,Math.min(max,v));
+}
+
+function distance(a,b){
+    return Math.hypot(a.x-b.x,a.y-b.y);
+}
+
+function getAngle(a,b){
+    return Math.atan2(b.y-a.y,b.x-a.x);
+}
+
+function angleLerp(a,b,t){
+
+    let difference=((b-a+Math.PI*3)%(Math.PI*2))-Math.PI;
+
+    return a+difference*t;
+}
+
+/* =====================================================
+   STATE
+===================================================== */
+
+let running=false;
+let paused=false;
+
+let animationID=null;
+let lastTime=0;
+
+let player=null;
+
+let zombies=[];
+let bullets=[];
+let particles=[];
+let blood=[];
+let pickups=[];
+let barrels=[];
+let explosions=[];
+let walls=[];
+
+let wave=0;
+let score=0;
+
+let multiplier=1;
+let comboTimer=0;
+
+let enemiesToSpawn=0;
+let spawnTimer=0;
+let nextWaveTimer=0;
+
+let shake=0;
+
+/* =====================================================
+   MULTIPLAYER STATE
+===================================================== */
+
+let socket=null;
+
+let multiplayer=false;
+let isHost=false;
+let currentRoom=null;
+
+let remotePlayer=null;
+
+let playerNetworkTimer=0;
+let zombieNetworkTimer=0;
+
+let connectedPlayers=1;
+
+try{
+
+    if(typeof io==="function"){
+
+        socket=io();
+
+        socket.on("connect",()=>{
+
+            connectionStatus.textContent="🟢 Server connected";
+            connectionStatus.className="status good";
+        });
+
+        socket.on("disconnect",()=>{
+
+            connectionStatus.textContent="🔴 Server disconnected";
+            connectionStatus.className="status bad";
+        });
+
+        socket.on("playerJoined",()=>{
+
+            connectedPlayers=2;
+
+            lobbyStatus.innerHTML=
+                "🟢 PLAYER 2 CONNECTED<br><br>"+
+                "Both players are ready.";
+
+            if(isHost){
+                startOnlineButton.classList.remove("hidden");
+            }
+        });
+
+        socket.on("roomPlayers",data=>{
+
+            connectedPlayers=Number(data.count)||1;
+
+            if(connectedPlayers>=2){
+
+                lobbyStatus.innerHTML=
+                    "🟢 2 / 2 PLAYERS<br><br>"+
+                    (
+                        isHost
+                        ?"Press START GAME."
+                        :"Waiting for the Host..."
+                    );
+
+                if(isHost){
+                    startOnlineButton.classList.remove("hidden");
+                }
+            }
+        });
+
+        socket.on("matchStarted",()=>{
+
+            lobbyMenu.classList.add("hidden");
+
+            multiplayer=true;
+
+            startGame(true);
+        });
+
+        socket.on("remotePlayerState",data=>{
+
+            if(!data)return;
+
+            if(!remotePlayer){
+
+                remotePlayer={
+                    x:data.x,
+                    y:data.y,
+                    targetX:data.x,
+                    targetY:data.y,
+                    rotation:data.rotation||0,
+                    targetRotation:data.rotation||0,
+                    health:data.health??100,
+                    weaponIndex:data.weaponIndex||0,
+                    dead:!!data.dead,
+                    walkTime:0
+                };
+
+            }else{
+
+                remotePlayer.targetX=data.x;
+                remotePlayer.targetY=data.y;
+
+                remotePlayer.targetRotation=
+                    data.rotation||0;
+
+                remotePlayer.health=
+                    data.health??100;
+
+                remotePlayer.weaponIndex=
+                    data.weaponIndex||0;
+
+                remotePlayer.dead=
+                    !!data.dead;
+            }
+        });
+
+        socket.on("remoteShoot",data=>{
+
+            if(!data)return;
+
+            createRemoteShot(
+                data.x,
+                data.y,
+                data.rotation,
+                data.weaponIndex
+            );
+        });
+
+        socket.on("zombieSnapshot",data=>{
+
+            if(isHost)return;
+
+            applyZombieSnapshot(data);
+        });
+
+        socket.on("waveState",data=>{
+
+            if(isHost || !data)return;
+
+            wave=Number(data.wave)||0;
+            score=Number(data.score)||0;
+            enemiesToSpawn=Number(data.enemiesToSpawn)||0;
+        });
+
+        socket.on("playerLeft",()=>{
+
+            connectedPlayers=1;
+            remotePlayer=null;
+
+            showMessage("PLAYER LEFT");
+        });
+
+        socket.on("roomClosed",()=>{
+
+            alert("The Host closed the room.");
+
+            multiplayer=false;
+            isHost=false;
+            currentRoom=null;
+            remotePlayer=null;
+
+            goToMenu();
+        });
+    }
+
+}catch(error){
+
+    console.error(error);
+
+    connectionStatus.textContent="🔴 Multiplayer unavailable";
+    connectionStatus.className="status bad";
+}
+
+/* =====================================================
+   JOYSTICK
+===================================================== */
+
+class Joystick{
+
+    constructor(elementID,knobID){
+
+        this.element=document.getElementById(elementID);
+        this.knob=document.getElementById(knobID);
+
+        this.x=0;
+        this.y=0;
+        this.pointerID=null;
+
+        this.element.addEventListener(
+            "pointerdown",
+            e=>this.start(e)
+        );
+
+        this.element.addEventListener(
+            "pointermove",
+            e=>this.move(e)
+        );
+
+        this.element.addEventListener(
+            "pointerup",
+            e=>this.end(e)
+        );
+
+        this.element.addEventListener(
+            "pointercancel",
+            e=>this.end(e)
+        );
+    }
+
+    start(e){
+
+        e.preventDefault();
+
+        this.pointerID=e.pointerId;
+
+        try{
+            this.element.setPointerCapture(e.pointerId);
+        }catch(error){}
+
+        this.calculate(e);
+    }
+
+    move(e){
+
+        if(this.pointerID!==e.pointerId)return;
+
+        e.preventDefault();
+
+        this.calculate(e);
+    }
+
+    end(e){
+
+        if(this.pointerID!==e.pointerId)return;
+
+        this.reset();
+    }
+
+    calculate(e){
+
+        const rect=this.element.getBoundingClientRect();
+
+        const cx=rect.left+rect.width/2;
+        const cy=rect.top+rect.height/2;
+
+        let dx=e.clientX-cx;
+        let dy=e.clientY-cy;
+
+        const max=rect.width*.31;
+
+        const len=Math.hypot(dx,dy);
+
+        if(len>max){
+
+            dx=dx/len*max;
+            dy=dy/len*max;
+        }
+
+        this.x=dx/max;
+        this.y=dy/max;
+
+        this.knob.style.transform=
+            "translate("+dx+"px,"+dy+"px)";
+    }
+
+    reset(){
+
+        this.pointerID=null;
+
+        this.x=0;
+        this.y=0;
+
+        this.knob.style.transform="translate(0px,0px)";
+    }
+}
+
+const moveStick=new Joystick("moveJoystick","moveKnob");
+const aimStick=new Joystick("aimJoystick","aimKnob");
+
+/* =====================================================
+   WEAPONS
+===================================================== */
+
+const WEAPONS=[
+
+    {
+        name:"PISTOL",
+        damage:40,
+        rate:250,
+        bulletSpeed:900,
+        spread:.02,
+        pellets:1,
+        magazine:12,
+        reserve:120,
+        color:"#f0dc91"
+    },
+
+    {
+        name:"SHOTGUN",
+        damage:25,
+        rate:650,
+        bulletSpeed:760,
+        spread:.24,
+        pellets:7,
+        magazine:8,
+        reserve:48,
+        color:"#ffb45a"
+    },
+
+    {
+        name:"UZI",
+        damage:17,
+        rate:90,
+        bulletSpeed:950,
+        spread:.09,
+        pellets:1,
+        magazine:30,
+        reserve:180,
+        color:"#f5e3a3"
+    },
+
+    {
+        name:"RIFLE",
+        damage:30,
+        rate:135,
+        bulletSpeed:1100,
+        spread:.04,
+        pellets:1,
+        magazine:30,
+        reserve:150,
+        color:"#e9d182"
+    }
+];
+
+/* =====================================================
+   COLLISION
+===================================================== */
+
+function circleHitsWalls(x,y,radius){
+
+    for(const wall of walls){
+
+        const nearestX=clamp(
+            x,
+            wall.x,
+            wall.x+wall.width
+        );
+
+        const nearestY=clamp(
+            y,
+            wall.y,
+            wall.y+wall.height
+        );
+
+        const dx=x-nearestX;
+        const dy=y-nearestY;
+
+        if(dx*dx+dy*dy<radius*radius){
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/* =====================================================
+   PLAYER
+===================================================== */
+
+class Player{
+
+    constructor(){
+
+        /*
+        Host y Client aparecen ligeramente separados.
+        */
+
+        if(multiplayer){
+
+            this.x=isHost
+                ?W/2-45
+                :W/2+45;
+
+        }else{
+            this.x=W/2;
+        }
+
+        this.y=H/2;
+
+        this.radius=17;
+        this.speed=220;
+
+        this.health=100;
+        this.maxHealth=100;
+
+        this.rotation=0;
+
+        this.weaponIndex=0;
+
+        this.ammo=[];
+        this.reserve=[];
+
+        this.lastShot=0;
+        this.invulnerable=0;
+        this.dead=false;
+        this.walkTime=0;
+
+        for(let i=0;i<WEAPONS.length;i++){
+
+            this.ammo[i]=WEAPONS[i].magazine;
+            this.reserve[i]=WEAPONS[i].reserve;
+        }
+    }
+
+    get weapon(){
+        return WEAPONS[this.weaponIndex];
+    }
+
+    update(dt,time){
+
+        if(this.dead)return;
+
+        let mx=moveStick.x;
+        let my=moveStick.y;
+
+        const mag=Math.hypot(mx,my);
+
+        if(mag>.08){
+
+            if(mag>1){
+                mx/=mag;
+                my/=mag;
+            }
+
+            this.move(
+                mx*this.speed*dt,
+                my*this.speed*dt
+            );
+
+            this.walkTime+=dt*12;
+        }
+
+        const ax=aimStick.x;
+        const ay=aimStick.y;
+
+        const aimMag=Math.hypot(ax,ay);
+
+        if(aimMag>.18){
+
+            this.rotation=Math.atan2(ay,ax);
+
+            this.shoot(time);
+        }
+
+        if(this.invulnerable>0){
+            this.invulnerable-=dt;
+        }
+    }
+
+    move(dx,dy){
+
+        const newX=this.x+dx;
+
+        if(!circleHitsWalls(
+            newX,
+            this.y,
+            this.radius
+        )){
+            this.x=newX;
+        }
+
+        const newY=this.y+dy;
+
+        if(!circleHitsWalls(
+            this.x,
+            newY,
+            this.radius
+        )){
+            this.y=newY;
+        }
+
+        this.x=clamp(this.x,45,W-45);
+        this.y=clamp(this.y,45,H-45);
+    }
+
+    shoot(time){
+
+        const weapon=this.weapon;
+
+        if(time-this.lastShot<weapon.rate){
+            return;
+        }
+
+        if(this.ammo[this.weaponIndex]<=0){
+
+            this.reload();
+            return;
+        }
+
+        this.lastShot=time;
+
+        this.ammo[this.weaponIndex]--;
+
+        for(let i=0;i<weapon.pellets;i++){
+
+            const a=
+                this.rotation+
+                rand(-weapon.spread,weapon.spread);
+
+            bullets.push(
+                new Bullet(
+                    this.x+Math.cos(a)*26,
+                    this.y+Math.sin(a)*26,
+                    a,
+                    weapon,
+                    true
+                )
+            );
+        }
+
+        if(multiplayer && socket && socket.connected){
+
+            socket.emit("shoot",{
+                x:this.x,
+                y:this.y,
+                rotation:this.rotation,
+                weaponIndex:this.weaponIndex
+            });
+        }
+
+        createMuzzle(
+            this.x+Math.cos(this.rotation)*27,
+            this.y+Math.sin(this.rotation)*27,
+            weapon.color
+        );
+
+        shake=Math.max(
+            shake,
+            weapon.pellets>1?5:2
+        );
+    }
+
+    reload(){
+
+        const i=this.weaponIndex;
+        const weapon=this.weapon;
+
+        const missing=weapon.magazine-this.ammo[i];
+
+        if(missing<=0 || this.reserve[i]<=0){
+            return;
+        }
+
+        const amount=Math.min(
+            missing,
+            this.reserve[i]
+        );
+
+        this.ammo[i]+=amount;
+        this.reserve[i]-=amount;
+
+        showMessage("RELOADED");
+    }
+
+    changeWeapon(){
+
+        this.weaponIndex++;
+
+        if(this.weaponIndex>=WEAPONS.length){
+            this.weaponIndex=0;
+        }
+
+        updateHUD();
+    }
+
+    damage(amount){
+
+        if(this.dead || this.invulnerable>0){
+            return;
+        }
+
+        this.health-=amount;
+
+        this.invulnerable=.3;
+        shake=8;
+
+        if(this.health<=0){
+
+            this.health=0;
+            this.dead=true;
+
+            createBurst(
+                this.x,
+                this.y,
+                "#922b2b",
+                30
+            );
+        }
+    }
+
+    heal(amount){
+
+        this.health=Math.min(
+            this.maxHealth,
+            this.health+amount
+        );
+    }
+
+    draw(){
+
+        if(this.dead)return;
+
+        drawPlayerCharacter(
+            this.x,
+            this.y,
+            this.rotation,
+            this.walkTime,
+            "#56735b",
+            this.invulnerable
+        );
+    }
+}
+
+/* =====================================================
+   PLAYER DRAWING
+===================================================== */
+
+function drawPlayerCharacter(
+    x,
+    y,
+    rotation,
+    walkTime,
+    bodyColor,
+    invulnerable=0
+){
+
+    ctx.save();
+
+    ctx.translate(x,y);
+    ctx.rotate(rotation);
+
+    if(
+        invulnerable>0 &&
+        Math.floor(invulnerable*20)%2
+    ){
+        ctx.globalAlpha=.4;
+    }
+
+    ctx.fillStyle="rgba(0,0,0,.4)";
+
+    ctx.beginPath();
+
+    ctx.ellipse(
+        -3,9,
+        20,12,
+        0,0,
+        Math.PI*2
+    );
+
+    ctx.fill();
+
+    const leg=Math.sin(walkTime)*4;
+
+    ctx.fillStyle="#242925";
+
+    ctx.fillRect(
+        -13,
+        -11+leg,
+        19,
+        8
+    );
+
+    ctx.fillRect(
+        -13,
+        4-leg,
+        19,
+        8
+    );
+
+    ctx.fillStyle=bodyColor;
+
+    ctx.fillRect(
+        -14,-14,
+        28,28
+    );
+
+    ctx.fillStyle="#d2aa84";
+
+    ctx.fillRect(
+        4,-11,
+        18,22
+    );
+
+    ctx.fillStyle="#30271f";
+
+    ctx.fillRect(
+        7,-11,
+        15,5
+    );
+
+    ctx.fillStyle="#171918";
+
+    ctx.fillRect(
+        10,-4,
+        31,8
+    );
+
+    ctx.fillStyle="#656a66";
+
+    ctx.fillRect(
+        36,-3,
+        11,6
+    );
+
+    ctx.restore();
+}
+
+/* =====================================================
+   REMOTE PLAYER
+===================================================== */
+
+function updateRemotePlayer(dt){
+
+    if(!remotePlayer)return;
+
+    const oldX=remotePlayer.x;
+    const oldY=remotePlayer.y;
+
+    remotePlayer.x+=
+        (remotePlayer.targetX-remotePlayer.x)*
+        Math.min(1,dt*15);
+
+    remotePlayer.y+=
+        (remotePlayer.targetY-remotePlayer.y)*
+        Math.min(1,dt*15);
+
+    remotePlayer.rotation=
+        angleLerp(
+            remotePlayer.rotation,
+            remotePlayer.targetRotation,
+            Math.min(1,dt*18)
+        );
+
+    if(
+        Math.hypot(
+            remotePlayer.x-oldX,
+            remotePlayer.y-oldY
+        )>.15
+    ){
+        remotePlayer.walkTime+=dt*12;
+    }
+}
+
+function drawRemotePlayer(){
+
+    if(!remotePlayer || remotePlayer.dead)return;
+
+    drawPlayerCharacter(
+        remotePlayer.x,
+        remotePlayer.y,
+        remotePlayer.rotation,
+        remotePlayer.walkTime,
+        "#496f8b"
+    );
+
+    ctx.save();
+
+    ctx.textAlign="center";
+    ctx.font="bold 9px Arial";
+
+    ctx.fillStyle="rgba(0,0,0,.65)";
+    ctx.fillRect(
+        remotePlayer.x-24,
+        remotePlayer.y-34,
+        48,
+        5
+    );
+
+    ctx.fillStyle="#4ca85d";
+
+    ctx.fillRect(
+        remotePlayer.x-24,
+        remotePlayer.y-34,
+        48*clamp(remotePlayer.health/100,0,1),
+        5
+    );
+
+    ctx.fillStyle="#c8d8e3";
+
+    ctx.fillText(
+        "PLAYER 2",
+        remotePlayer.x,
+        remotePlayer.y-41
+    );
+
+    ctx.restore();
+}
+
+/* =====================================================
+   BULLET
+===================================================== */
+
+class Bullet{
+
+    constructor(
+        x,
+        y,
+        direction,
+        weapon,
+        canDamage=true
+    ){
+
+        this.x=x;
+        this.y=y;
+
+        this.oldX=x;
+        this.oldY=y;
+
+        this.vx=Math.cos(direction)*weapon.bulletSpeed;
+        this.vy=Math.sin(direction)*weapon.bulletSpeed;
+
+        this.damage=weapon.damage;
+        this.color=weapon.color;
+
+        this.life=1.2;
+        this.dead=false;
+
+        this.canDamage=canDamage;
+    }
+
+    update(dt){
+
+        if(this.dead)return;
+
+        this.oldX=this.x;
+        this.oldY=this.y;
+
+        this.x+=this.vx*dt;
+        this.y+=this.vy*dt;
+
+        this.life-=dt;
+
+        if(
+            this.life<=0 ||
+            this.x<0 ||
+            this.y<0 ||
+            this.x>W ||
+            this.y>H
+        ){
+            this.dead=true;
+            return;
+        }
+
+        for(const wall of walls){
+
+            if(
+                this.x>wall.x &&
+                this.x<wall.x+wall.width &&
+                this.y>wall.y &&
+                this.y<wall.y+wall.height
+            ){
+
+                createSpark(this.x,this.y);
+
+                this.dead=true;
+                return;
+            }
+        }
+
+        /*
+        En multiplayer, solamente el Host decide
+        realmente el daño a los zombis.
+
+        En SOLO el jugador local lo calcula.
+        */
+
+        const damageAllowed=
+            !multiplayer ||
+            isHost ||
+            this.canDamage;
+
+        if(!damageAllowed)return;
+
+        if(multiplayer && !isHost){
+            return;
+        }
+
+        for(const barrel of barrels){
+
+            if(
+                !barrel.dead &&
+                distance(this,barrel)<barrel.radius
+            ){
+
+                barrel.health-=this.damage;
+
+                this.dead=true;
+
+                if(barrel.health<=0){
+                    barrel.explode();
+                }
+
+                return;
+            }
+        }
+
+        for(const zombie of zombies){
+
+            if(
+                !zombie.dead &&
+                distance(this,zombie)<zombie.radius
+            ){
+
+                zombie.damage(
+                    this.damage,
+                    Math.atan2(this.vy,this.vx)
+                );
+
+                this.dead=true;
+                return;
+            }
+        }
+    }
+
+    draw(){
+
+        ctx.strokeStyle=this.color;
+        ctx.lineWidth=2;
+
+        ctx.beginPath();
+
+        ctx.moveTo(this.oldX,this.oldY);
+        ctx.lineTo(this.x,this.y);
+
+        ctx.stroke();
+    }
+}
+
+function createRemoteShot(
+    x,
+    y,
+    rotation,
+    weaponIndex
+){
+
+    const index=clamp(
+        Number(weaponIndex)||0,
+        0,
+        WEAPONS.length-1
+    );
+
+    const weapon=WEAPONS[index];
+
+    for(let i=0;i<weapon.pellets;i++){
+
+        const a=
+            rotation+
+            rand(-weapon.spread,weapon.spread);
+
+        bullets.push(
+            new Bullet(
+                x+Math.cos(a)*26,
+                y+Math.sin(a)*26,
+                a,
+                weapon,
+                isHost
+            )
+        );
+    }
+
+    createMuzzle(
+        x+Math.cos(rotation)*27,
+        y+Math.sin(rotation)*27,
+        weapon.color
+    );
+}
+
+/* =====================================================
+   ZOMBIE
+===================================================== */
+
+class Zombie{
+
+    constructor(x,y,type="normal"){
+
+        this.x=x;
+        this.y=y;
+
+        this.type=type;
+        this.radius=16;
+
+        this.dead=false;
+        this.attackTimer=0;
+
+        this.walkTime=rand(0,10);
+
+        this.avoidSide=Math.random()<.5?-1:1;
+
+        this.lastX=x;
+        this.lastY=y;
+
+        this.stuckCheck=0;
+
+        if(type==="fast"){
+
+            this.health=55+wave*4;
+            this.speed=95+wave;
+            this.damageAmount=8;
+            this.color="#788969";
+
+        }else if(type==="tank"){
+
+            this.health=230+wave*15;
+            this.speed=42+wave;
+            this.damageAmount=18;
+            this.radius=23;
+            this.color="#53604c";
+
+        }else{
+
+            this.health=85+wave*7;
+            this.speed=58+wave*1.2;
+            this.damageAmount=11;
+            this.color="#68775f";
+        }
+
+        this.maxHealth=this.health;
+    }
+
+    canMoveTo(x,y){
+
+        return !circleHitsWalls(
+            x,
+            y,
+            this.radius+2
+        );
+    }
+
+    tryDirection(direction,amount){
+
+        const nx=
+            this.x+
+            Math.cos(direction)*amount;
+
+        const ny=
+            this.y+
+            Math.sin(direction)*amount;
+
+        if(this.canMoveTo(nx,ny)){
+
+            this.x=nx;
+            this.y=ny;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    getTarget(){
+
+        if(
+            multiplayer &&
+            remotePlayer &&
+            !remotePlayer.dead &&
+            player &&
+            !player.dead
+        ){
+
+            const localDistance=
+                distance(this,player);
+
+            const remoteDistance=
+                distance(this,remotePlayer);
+
+            return remoteDistance<localDistance
+                ?remotePlayer
+                :player;
+        }
+
+        if(player && !player.dead){
+            return player;
+        }
+
+        if(remotePlayer && !remotePlayer.dead){
+            return remotePlayer;
+        }
+
+        return null;
+    }
+
+    moveTowardTarget(target,dt){
+
+        const targetAngle=getAngle(this,target);
+        const amount=this.speed*dt;
+
+        if(this.tryDirection(targetAngle,amount)){
+            return;
+        }
+
+        const horizontal=Math.cos(targetAngle);
+
+        if(Math.abs(horizontal)>.05){
+
+            const nx=
+                this.x+
+                Math.sign(horizontal)*amount;
+
+            if(this.canMoveTo(nx,this.y)){
+                this.x=nx;
+                return;
+            }
+        }
+
+        const vertical=Math.sin(targetAngle);
+
+        if(Math.abs(vertical)>.05){
+
+            const ny=
+                this.y+
+                Math.sign(vertical)*amount;
+
+            if(this.canMoveTo(this.x,ny)){
+                this.y=ny;
+                return;
+            }
+        }
+
+        const offsets=[
+            .25,-.25,
+            .5,-.5,
+            .8,-.8,
+            1.15,-1.15,
+            1.57,-1.57,
+            2.1,-2.1,
+            3.14
+        ];
+
+        for(let i=0;i<offsets.length;i++){
+
+            const offset=
+                offsets[i]*
+                this.avoidSide;
+
+            if(
+                this.tryDirection(
+                    targetAngle+offset,
+                    amount
+                )
+            ){
+                return;
+            }
+        }
+
+        this.avoidSide*=-1;
+    }
+
+    separateFromOthers(dt){
+
+        let pushX=0;
+        let pushY=0;
+        let count=0;
+
+        for(const other of zombies){
+
+            if(other===this || other.dead){
+                continue;
+            }
+
+            const dx=this.x-other.x;
+            const dy=this.y-other.y;
+
+            const d=Math.hypot(dx,dy);
+
+            const desired=
+                this.radius+
+                other.radius+
+                4;
+
+            if(d>0 && d<desired){
+
+                const force=1-d/desired;
+
+                pushX+=dx/d*force;
+                pushY+=dy/d*force;
+
+                count++;
+            }
+        }
+
+        if(count===0)return;
+
+        pushX/=count;
+        pushY/=count;
+
+        const amount=45*dt;
+
+        const nx=this.x+pushX*amount;
+        const ny=this.y+pushY*amount;
+
+        if(this.canMoveTo(nx,ny)){
+            this.x=nx;
+            this.y=ny;
+        }
+    }
+
+    rescueIfStuck(dt,target){
+
+        this.stuckCheck+=dt;
+
+        if(this.stuckCheck<.7)return;
+
+        this.stuckCheck=0;
+
+        const moved=Math.hypot(
+            this.x-this.lastX,
+            this.y-this.lastY
+        );
+
+        this.lastX=this.x;
+        this.lastY=this.y;
+
+        if(
+            moved>3 ||
+            distance(this,target)<55
+        ){
+            return;
+        }
+
+        this.avoidSide*=-1;
+
+        const targetAngle=getAngle(this,target);
+
+        const angles=[
+            targetAngle+Math.PI/2,
+            targetAngle-Math.PI/2,
+            targetAngle+Math.PI*.75,
+            targetAngle-Math.PI*.75,
+            targetAngle+Math.PI
+        ];
+
+        for(let radius=10;radius<=55;radius+=10){
+
+            for(let i=0;i<angles.length;i++){
+
+                const nx=
+                    this.x+
+                    Math.cos(angles[i])*radius;
+
+                const ny=
+                    this.y+
+                    Math.sin(angles[i])*radius;
+
+                if(
+                    nx<45 ||
+                    nx>W-45 ||
+                    ny<45 ||
+                    ny>H-45
+                ){
+                    continue;
+                }
+
+                if(this.canMoveTo(nx,ny)){
+
+                    this.x=nx;
+                    this.y=ny;
+
+                    return;
+                }
+            }
+        }
+    }
+
+    update(dt){
+
+        if(this.dead)return;
+
+        const target=this.getTarget();
+
+        if(!target)return;
+
+        this.moveTowardTarget(target,dt);
+        this.separateFromOthers(dt);
+        this.rescueIfStuck(dt,target);
+
+        this.x=clamp(this.x,45,W-45);
+        this.y=clamp(this.y,45,H-45);
+
+        this.walkTime+=dt*8;
+
+        if(
+            distance(this,target)<
+            this.radius+
+            (target.radius||17)+
+            5
+        ){
+
+            if(this.attackTimer<=0){
+
+                /*
+                Host puede dañar al jugador local.
+
+                El daño remoto completo se sincronizará
+                desde el servidor en una versión más
+                autoritativa.
+                */
+
+                if(target===player){
+                    player.damage(this.damageAmount);
+                }
+
+                this.attackTimer=.7;
+            }
+        }
+
+        if(this.attackTimer>0){
+            this.attackTimer-=dt;
+        }
+    }
+
+    damage(amount,hitAngle){
+
+        this.health-=amount;
+
+        const nx=
+            this.x+
+            Math.cos(hitAngle)*5;
+
+        const ny=
+            this.y+
+            Math.sin(hitAngle)*5;
+
+        if(this.canMoveTo(nx,ny)){
+            this.x=nx;
+            this.y=ny;
+        }
+
+        createBloodSpray(
+            this.x,
+            this.y,
+            hitAngle
+        );
+
+        if(this.health<=0){
+            this.kill();
+        }
+    }
+
+    kill(){
+
+        if(this.dead)return;
+
+        this.dead=true;
+
+        score+=Math.floor(
+            100*multiplier
+        );
+
+        multiplier=Math.min(
+            10,
+            multiplier+.18
+        );
+
+        comboTimer=3.5;
+
+        blood.push({
+            x:this.x,
+            y:this.y,
+            radius:rand(8,20),
+            alpha:rand(.22,.4)
+        });
+
+        createBurst(
+            this.x,
+            this.y,
+            "#7c2929",
+            14
+        );
+
+        if(Math.random()<.14){
+
+            pickups.push({
+                x:this.x,
+                y:this.y,
+                radius:13,
+                type:
+                    Math.random()<.35
+                    ?"health"
+                    :"ammo",
+                life:12,
+                time:rand(0,10)
+            });
+        }
+    }
+
+    draw(){
+
+        if(this.dead)return;
+
+        let direction=0;
+
+        const target=this.getTarget();
+
+        if(target){
+            direction=getAngle(this,target);
+        }
+
+        ctx.save();
+
+        ctx.translate(this.x,this.y);
+        ctx.rotate(direction);
+
+        ctx.fillStyle="rgba(0,0,0,.35)";
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            0,9,
+            this.radius,
+            this.radius*.65,
+            0,0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+        const leg=Math.sin(this.walkTime)*3;
+
+        ctx.fillStyle="#343b33";
+
+        ctx.fillRect(
+            -12,
+            -10+leg,
+            18,
+            8
+        );
+
+        ctx.fillRect(
+            -12,
+            4-leg,
+            18,
+            8
+        );
+
+        ctx.fillStyle=this.color;
+
+        ctx.fillRect(
+            -this.radius*.8,
+            -this.radius*.8,
+            this.radius*1.5,
+            this.radius*1.6
+        );
+
+        ctx.fillStyle="#839475";
+
+        ctx.fillRect(
+            3,
+            -this.radius*.6,
+            this.radius,
+            this.radius*1.2
+        );
+
+        ctx.fillStyle="#551919";
+
+        ctx.fillRect(
+            this.radius*.65,
+            -6,
+            3,3
+        );
+
+        ctx.fillRect(
+            this.radius*.65,
+            4,
+            3,3
+        );
+
+        ctx.restore();
+
+        if(
+            this.type==="tank" &&
+            this.health<this.maxHealth
+        ){
+
+            ctx.fillStyle="#222";
+
+            ctx.fillRect(
+                this.x-20,
+                this.y-32,
+                40,
+                4
+            );
+
+            ctx.fillStyle="#a42e2e";
+
+            ctx.fillRect(
+                this.x-20,
+                this.y-32,
+                40*(this.health/this.maxHealth),
+                4
+            );
+        }
+    }
+}
+
+/* =====================================================
+   ZOMBIE NETWORK
+===================================================== */
+
+function sendPlayerState(dt){
+
+    if(
+        !multiplayer ||
+        !socket ||
+        !socket.connected ||
+        !player
+    ){
+        return;
+    }
+
+    playerNetworkTimer-=dt;
+
+    if(playerNetworkTimer>0)return;
+
+    playerNetworkTimer=.05;
+
+    socket.emit("playerState",{
+        x:player.x,
+        y:player.y,
+        rotation:player.rotation,
+        health:player.health,
+        weaponIndex:player.weaponIndex,
+        dead:player.dead
+    });
+}
+
+function sendZombieSnapshot(dt){
+
+    if(
+        !multiplayer ||
+        !isHost ||
+        !socket ||
+        !socket.connected
+    ){
+        return;
+    }
+
+    zombieNetworkTimer-=dt;
+
+    if(zombieNetworkTimer>0)return;
+
+    zombieNetworkTimer=.08;
+
+    socket.emit(
+        "zombieSnapshot",
+        zombies
+            .filter(zombie=>!zombie.dead)
+            .map(zombie=>({
+                x:zombie.x,
+                y:zombie.y,
+                type:zombie.type,
+                radius:zombie.radius,
+                health:zombie.health,
+                maxHealth:zombie.maxHealth,
+                walkTime:zombie.walkTime
+            }))
+    );
+
+    socket.emit("waveState",{
+        wave,
+        score,
+        enemiesToSpawn
+    });
+}
+
+function applyZombieSnapshot(data){
+
+    if(!Array.isArray(data))return;
+
+    /*
+    Cliente usa los datos del Host.
+    */
+
+    while(zombies.length<data.length){
+
+        const source=data[zombies.length];
+
+        zombies.push(
+            new Zombie(
+                source.x,
+                source.y,
+                source.type
+            )
+        );
+    }
+
+    if(zombies.length>data.length){
+        zombies.length=data.length;
+    }
+
+    data.forEach((source,index)=>{
+
+        const zombie=zombies[index];
+
+        zombie.x=source.x;
+        zombie.y=source.y;
+        zombie.type=source.type;
+        zombie.radius=source.radius;
+        zombie.health=source.health;
+        zombie.maxHealth=source.maxHealth;
+        zombie.walkTime=source.walkTime||0;
+        zombie.dead=false;
+    });
+}
+
+/* =====================================================
+   BARREL
+===================================================== */
+
+class Barrel{
+
+    constructor(x,y){
+
+        this.x=x;
+        this.y=y;
+
+        this.radius=16;
+        this.health=60;
+        this.dead=false;
+    }
+
+    explode(){
+
+        if(this.dead)return;
+
+        this.dead=true;
+
+        shake=16;
+
+        explosions.push({
+            x:this.x,
+            y:this.y,
+            radius:5,
+            life:.5
+        });
+
+        createBurst(
+            this.x,
+            this.y,
+            "#ff8b35",
+            35
+        );
+
+        for(const zombie of zombies){
+
+            if(
+                !zombie.dead &&
+                distance(this,zombie)<130
+            ){
+
+                zombie.damage(
+                    190,
+                    getAngle(this,zombie)
+                );
+            }
+        }
+
+        if(
+            player &&
+            !player.dead &&
+            distance(this,player)<100
+        ){
+            player.damage(28);
+        }
+
+        for(const barrel of barrels){
+
+            if(
+                barrel!==this &&
+                !barrel.dead &&
+                distance(this,barrel)<95
+            ){
+                barrel.explode();
+            }
+        }
+    }
+
+    draw(){
+
+        if(this.dead)return;
+
+        ctx.save();
+
+        ctx.translate(this.x,this.y);
+
+        ctx.fillStyle="rgba(0,0,0,.35)";
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            3,10,
+            17,10,
+            0,0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+
+        ctx.fillStyle="#a83b29";
+
+        ctx.fillRect(
+            -14,-18,
+            28,36
+        );
+
+        ctx.fillStyle="#d64c31";
+
+        ctx.fillRect(
+            -10,-18,
+            8,36
+        );
+
+        ctx.fillStyle="#292929";
+
+        ctx.fillRect(
+            -15,-13,
+            30,4
+        );
+
+        ctx.fillRect(
+            -15,9,
+            30,4
+        );
+
+        ctx.fillStyle="#e2bf43";
+
+        ctx.font="bold 15px Arial";
+        ctx.textAlign="center";
+
+        ctx.fillText("!",0,5);
+
+        ctx.restore();
+    }
+}
+
+/* =====================================================
+   PARTICLES
+===================================================== */
+
+function createBurst(x,y,color,amount){
+
+    for(let i=0;i<amount;i++){
+
+        const a=rand(0,Math.PI*2);
+        const speed=rand(30,190);
+
+        particles.push({
+            x,
+            y,
+            vx:Math.cos(a)*speed,
+            vy:Math.sin(a)*speed,
+            life:rand(.25,.7),
+            maxLife:.7,
+            radius:rand(2,6),
+            color
+        });
+    }
+}
+
+function createMuzzle(x,y,color){
+
+    particles.push({
+        x,
+        y,
+        vx:0,
+        vy:0,
+        life:.07,
+        maxLife:.07,
+        radius:15,
+        color
+    });
+}
+
+function createSpark(x,y){
+
+    createBurst(
+        x,
+        y,
+        "#e8cb70",
+        5
+    );
+}
+
+function createBloodSpray(x,y,direction){
+
+    for(let i=0;i<7;i++){
+
+        const a=
+            direction+
+            rand(-.8,.8);
+
+        const speed=rand(30,120);
+
+        particles.push({
+            x,
+            y,
+            vx:Math.cos(a)*speed,
+            vy:Math.sin(a)*speed,
+            life:rand(.25,.6),
+            maxLife:.6,
+            radius:rand(2,5),
+            color:"#8e2929"
+        });
+    }
+}
+
+function updateParticles(dt){
+
+    for(const p of particles){
+
+        p.x+=p.vx*dt;
+        p.y+=p.vy*dt;
+
+        p.vx*=.95;
+        p.vy*=.95;
+
+        p.life-=dt;
+    }
+
+    particles=particles.filter(
+        p=>p.life>0
+    );
+
+    for(const e of explosions){
+
+        e.radius+=280*dt;
+        e.life-=dt;
+    }
+
+    explosions=explosions.filter(
+        e=>e.life>0
+    );
+}
+
+/* =====================================================
+   PICKUPS
+===================================================== */
+
+function updatePickups(dt){
+
+    for(const item of pickups){
+
+        item.life-=dt;
+        item.time+=dt*4;
+
+        if(
+            player &&
+            !player.dead &&
+            distance(item,player)<
+            item.radius+player.radius
+        ){
+
+            if(item.type==="health"){
+
+                player.heal(35);
+                showMessage("+ HEALTH");
+
+            }else{
+
+                for(let i=0;i<WEAPONS.length;i++){
+
+                    player.reserve[i]+=
+                        Math.ceil(
+                            WEAPONS[i].magazine*1.5
+                        );
+                }
+
+                showMessage("+ AMMO");
+            }
+
+            item.life=-1;
+
+            createBurst(
+                item.x,
+                item.y,
+                item.type==="health"
+                    ?"#61b970"
+                    :"#d6b753",
+                10
+            );
+        }
+    }
+
+    pickups=pickups.filter(
+        item=>item.life>0
+    );
+}
+
+function drawPickups(){
+
+    for(const item of pickups){
+
+        const bob=Math.sin(item.time)*3;
+
+        ctx.save();
+
+        ctx.translate(
+            item.x,
+            item.y+bob
+        );
+
+        ctx.rotate(item.time*.2);
+
+        ctx.fillStyle=
+            item.type==="health"
+            ?"#3d854b"
+            :"#a48835";
+
+        ctx.fillRect(
+            -11,-11,
+            22,22
+        );
+
+        ctx.fillStyle="#eee";
+
+        if(item.type==="health"){
+
+            ctx.fillRect(-3,-7,6,14);
+            ctx.fillRect(-7,-3,14,6);
+
+        }else{
+
+            ctx.fillRect(-6,-7,4,14);
+            ctx.fillRect(2,-7,4,14);
+        }
+
+        ctx.restore();
+    }
+}
+
+/* =====================================================
+   MAP
+===================================================== */
+
+function createMap(){
+
+    walls=[];
+
+    const margin=25;
+
+    walls.push(
+        {
+            x:margin,
+            y:margin,
+            width:W-margin*2,
+            height:16
+        },
+        {
+            x:margin,
+            y:H-margin-16,
+            width:W-margin*2,
+            height:16
+        },
+        {
+            x:margin,
+            y:margin,
+            width:16,
+            height:H-margin*2
+        },
+        {
+            x:W-margin-16,
+            y:margin,
+            width:16,
+            height:H-margin*2
+        }
+    );
+
+    const cx=W/2;
+    const cy=H/2;
+
+    if(W>600 && H>300){
+
+        walls.push(
+            {
+                x:cx-205,
+                y:cy-110,
+                width:90,
+                height:22
+            },
+            {
+                x:cx+115,
+                y:cy-110,
+                width:90,
+                height:22
+            },
+            {
+                x:cx-205,
+                y:cy+88,
+                width:90,
+                height:22
+            },
+            {
+                x:cx+115,
+                y:cy+88,
+                width:90,
+                height:22
+            }
+        );
+    }
+
+    barrels=[];
+
+    const positions=[
+        [cx-250,cy],
+        [cx+250,cy],
+        [cx,cy-145],
+        [cx,cy+145]
+    ];
+
+    for(const position of positions){
+
+        if(
+            position[0]>60 &&
+            position[0]<W-60 &&
+            position[1]>60 &&
+            position[1]<H-60
+        ){
+
+            barrels.push(
+                new Barrel(
+                    position[0],
+                    position[1]
+                )
+            );
+        }
+    }
+}
+
+/* =====================================================
+   WAVES
+===================================================== */
+
+function getSpawnPosition(){
+
+    const side=Math.floor(Math.random()*4);
+    const padding=65;
+
+    if(side===0){
+        return{
+            x:rand(70,W-70),
+            y:padding
+        };
+    }
+
+    if(side===1){
+        return{
+            x:W-padding,
+            y:rand(70,H-70)
+        };
+    }
+
+    if(side===2){
+        return{
+            x:rand(70,W-70),
+            y:H-padding
+        };
+    }
+
+    return{
+        x:padding,
+        y:rand(70,H-70)
+    };
+}
+
+function beginWave(){
+
+    wave++;
+
+    enemiesToSpawn=
+        5+
+        wave*3;
+
+    spawnTimer=.4;
+
+    showMessage("WAVE "+wave);
+
+    if(
+        wave>=3 &&
+        wave%3===0
+    ){
+
+        const spawn=getSpawnPosition();
+
+        zombies.push(
+            new Zombie(
+                spawn.x,
+                spawn.y,
+                "tank"
+            )
+        );
+    }
+}
+
+function spawnZombie(){
+
+    const spawn=getSpawnPosition();
+
+    const random=Math.random();
+
+    let type="normal";
+
+    if(
+        wave>=6 &&
+        random<.06
+    ){
+        type="tank";
+
+    }else if(
+        wave>=2 &&
+        random<.25
+    ){
+        type="fast";
+    }
+
+    zombies.push(
+        new Zombie(
+            spawn.x,
+            spawn.y,
+            type
+        )
+    );
+}
+
+/* =====================================================
+   GAME FLOW
+===================================================== */
+
+function resetGame(){
+
+    zombies=[];
+    bullets=[];
+    particles=[];
+    blood=[];
+    pickups=[];
+    explosions=[];
+
+    remotePlayer=null;
+
+    wave=0;
+    score=0;
+
+    multiplier=1;
+    comboTimer=0;
+
+    enemiesToSpawn=0;
+    spawnTimer=0;
+    nextWaveTimer=1;
+
+    shake=0;
+
+    playerNetworkTimer=0;
+    zombieNetworkTimer=0;
+
+    moveStick.reset();
+    aimStick.reset();
+
+    player=new Player();
+
+    createMap();
+
+    updateHUD();
+}
+
+function startGame(fromNetwork=false){
+
+    resizeCanvas();
+
+    /*
+    Si es SOLO, aseguramos que multiplayer
+    esté desactivado.
+    */
+
+    if(!fromNetwork){
+        multiplayer=false;
+        isHost=false;
+        currentRoom=null;
+    }
+
+    resetGame();
+
+    mainMenu.classList.add("hidden");
+    multiplayerMenu.classList.add("hidden");
+    lobbyMenu.classList.add("hidden");
+    pauseMenu.classList.add("hidden");
+    gameOverMenu.classList.add("hidden");
+
+    hud.classList.remove("hidden");
+    controls.classList.remove("hidden");
+
+    if(multiplayer){
+
+        onlineIndicator.classList.remove("hidden");
+        roomHUD.classList.remove("hidden");
+
+        roomHUD.textContent=
+            (isHost?"HOST · ":"CLIENT · ")+
+            currentRoom;
+
+    }else{
+
+        onlineIndicator.classList.add("hidden");
+        roomHUD.classList.add("hidden");
+    }
+
+    paused=false;
+    running=true;
+
+    lastTime=performance.now();
+
+    if(animationID!==null){
+        cancelAnimationFrame(animationID);
+    }
+
+    animationID=requestAnimationFrame(gameLoop);
+}
+
+function restartGame(){
+
+    if(multiplayer){
+
+        /*
+        En esta versión una partida online nueva
+        se crea desde el lobby.
+        */
+
+        goToMenu();
+        return;
+    }
+
+    resizeCanvas();
+    resetGame();
+
+    gameOverMenu.classList.add("hidden");
+
+    hud.classList.remove("hidden");
+    controls.classList.remove("hidden");
+
+    paused=false;
+    running=true;
+
+    lastTime=performance.now();
+}
+
+function goToMenu(){
+
+    running=false;
+    paused=false;
+
+    moveStick.reset();
+    aimStick.reset();
+
+    pauseMenu.classList.add("hidden");
+    gameOverMenu.classList.add("hidden");
+    multiplayerMenu.classList.add("hidden");
+    lobbyMenu.classList.add("hidden");
+
+    hud.classList.add("hidden");
+    controls.classList.add("hidden");
+
+    onlineIndicator.classList.add("hidden");
+    roomHUD.classList.add("hidden");
+
+    mainMenu.classList.remove("hidden");
+
+    remotePlayer=null;
+}
+
+function togglePause(){
+
+    if(!running)return;
+
+    paused=!paused;
+
+    if(paused){
+
+        pauseMenu.classList.remove("hidden");
+
+    }else{
+
+        pauseMenu.classList.add("hidden");
+
+        lastTime=performance.now();
+    }
+}
+
+function endGame(){
+
+    running=false;
+
+    controls.classList.add("hidden");
+
+    finalScore.textContent=
+        score.toLocaleString()+
+        " POINTS";
+
+    gameOverMenu.classList.remove("hidden");
+}
+
+/* =====================================================
+   UPDATE
+===================================================== */
+
+function update(dt,time){
+
+    if(!player)return;
+
+    /*
+    SOLO o HOST:
+    controla las oleadas.
+    */
+
+    if(!multiplayer || isHost){
+
+        if(nextWaveTimer>0){
+
+            nextWaveTimer-=dt;
+
+            if(nextWaveTimer<=0){
+                beginWave();
+            }
+        }
+
+        if(enemiesToSpawn>0){
+
+            spawnTimer-=dt;
+
+            if(spawnTimer<=0){
+
+                spawnZombie();
+
+                enemiesToSpawn--;
+
+                spawnTimer=Math.max(
+                    .18,
+                    .75-wave*.03
+                );
+            }
+        }
+    }
+
+    player.update(dt,time);
+
+    updateRemotePlayer(dt);
+
+    /*
+    Solamente SOLO/HOST ejecutan IA.
+    El Client recibe posiciones.
+    */
+
+    if(!multiplayer || isHost){
+
+        for(const zombie of zombies){
+            zombie.update(dt);
+        }
+    }
+
+    for(const bullet of bullets){
+        bullet.update(dt);
+    }
+
+    bullets=bullets.filter(
+        bullet=>!bullet.dead
+    );
+
+    zombies=zombies.filter(
+        zombie=>!zombie.dead
+    );
+
+    updatePickups(dt);
+    updateParticles(dt);
+
+    if(comboTimer>0){
+
+        comboTimer-=dt;
+
+    }else{
+
+        multiplier+=(1-multiplier)*dt*2;
+
+        if(multiplier<1.01){
+            multiplier=1;
+        }
+    }
+
+    if(
+        (!multiplayer || isHost) &&
+        enemiesToSpawn===0 &&
+        zombies.length===0 &&
+        nextWaveTimer<=0
+    ){
+
+        nextWaveTimer=2.5;
+
+        showMessage("ROOM CLEAR");
+    }
+
+    if(multiplayer){
+
+        sendPlayerState(dt);
+
+        if(isHost){
+            sendZombieSnapshot(dt);
+        }
+    }
+
+    shake=Math.max(
+        0,
+        shake-dt*30
+    );
+
+    updateHUD();
+
+    if(player.dead){
+        endGame();
+    }
+}
+
+/* =====================================================
+   DRAW
+===================================================== */
+
+function drawFloor(){
+
+    ctx.fillStyle="#292e2a";
+
+    ctx.fillRect(0,0,W,H);
+
+    const tile=45;
+
+    ctx.strokeStyle=
+        "rgba(255,255,255,.025)";
+
+    for(let x=0;x<W;x+=tile){
+
+        ctx.beginPath();
+        ctx.moveTo(x,0);
+        ctx.lineTo(x,H);
+        ctx.stroke();
+    }
+
+    for(let y=0;y<H;y+=tile){
+
+        ctx.beginPath();
+        ctx.moveTo(0,y);
+        ctx.lineTo(W,y);
+        ctx.stroke();
+    }
+}
+
+function drawWalls(){
+
+    for(const wall of walls){
+
+        ctx.fillStyle="rgba(0,0,0,.4)";
+
+        ctx.fillRect(
+            wall.x+6,
+            wall.y+7,
+            wall.width,
+            wall.height
+        );
+
+        ctx.fillStyle="#4c514c";
+
+        ctx.fillRect(
+            wall.x,
+            wall.y,
+            wall.width,
+            wall.height
+        );
+
+        ctx.fillStyle="#666c66";
+
+        ctx.fillRect(
+            wall.x,
+            wall.y,
+            wall.width,
+            4
+        );
+    }
+}
+
+function draw(){
+
+    ctx.save();
+
+    if(shake>0){
+
+        ctx.translate(
+            rand(-shake,shake),
+            rand(-shake,shake)
+        );
+    }
+
+    drawFloor();
+
+    for(const stain of blood){
+
+        ctx.fillStyle=
+            "rgba(100,22,22,"+
+            stain.alpha+
+            ")";
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            stain.x,
+            stain.y,
+            stain.radius,
+            stain.radius*.6,
+            0,0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+    }
+
+    drawWalls();
+    drawPickups();
+
+    for(const barrel of barrels){
+        barrel.draw();
+    }
+
+    /*
+    Dibujamos actores por profundidad Y.
+    */
+
+    const actors=[];
+
+    for(const zombie of zombies){
+
+        actors.push({
+            y:zombie.y,
+            draw:()=>zombie.draw()
+        });
+    }
+
+    if(player){
+
+        actors.push({
+            y:player.y,
+            draw:()=>player.draw()
+        });
+    }
+
+    if(remotePlayer){
+
+        actors.push({
+            y:remotePlayer.y,
+            draw:()=>drawRemotePlayer()
+        });
+    }
+
+    actors.sort(
+        (a,b)=>a.y-b.y
+    );
+
+    for(const actor of actors){
+        actor.draw();
+    }
+
+    for(const bullet of bullets){
+        bullet.draw();
+    }
+
+    for(const p of particles){
+
+        ctx.globalAlpha=clamp(
+            p.life/p.maxLife,
+            0,
+            1
+        );
+
+        ctx.fillStyle=p.color;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p.x,
+            p.y,
+            p.radius,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+    }
+
+    ctx.globalAlpha=1;
+
+    for(const explosion of explosions){
+
+        const alpha=clamp(
+            explosion.life/.5,
+            0,
+            1
+        );
+
+        const gradient=
+            ctx.createRadialGradient(
+                explosion.x,
+                explosion.y,
+                0,
+                explosion.x,
+                explosion.y,
+                explosion.radius
+            );
+
+        gradient.addColorStop(
+            0,
+            "rgba(255,245,190,"+
+            alpha+
+            ")"
+        );
+
+        gradient.addColorStop(
+            .25,
+            "rgba(255,120,30,"+
+            alpha*.8+
+            ")"
+        );
+
+        gradient.addColorStop(
+            1,
+            "rgba(80,20,5,0)"
+        );
+
+        ctx.fillStyle=gradient;
+
+        ctx.beginPath();
+
+        ctx.arc(
+            explosion.x,
+            explosion.y,
+            explosion.radius,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+    }
+
+    const vignette=
+        ctx.createRadialGradient(
+            W/2,
+            H/2,
+            Math.min(W,H)*.2,
+            W/2,
+            H/2,
+            Math.max(W,H)*.75
+        );
+
+    vignette.addColorStop(
+        0,
+        "rgba(0,0,0,0)"
+    );
+
+    vignette.addColorStop(
+        1,
+        "rgba(0,0,0,.48)"
+    );
+
+    ctx.fillStyle=vignette;
+
+    ctx.fillRect(0,0,W,H);
+
+    ctx.restore();
+}
+
+/* =====================================================
+   HUD
+===================================================== */
+
+function updateHUD(){
+
+    if(!player)return;
+
+    healthBar.style.width=
+        (
+            player.health/
+            player.maxHealth*
+            100
+        )+"%";
+
+    ammoText.textContent=
+        player.ammo[player.weaponIndex]+
+        " / "+
+        player.reserve[player.weaponIndex];
+
+    weaponText.textContent=
+        player.weapon.name;
+
+    waveText.textContent=
+        "WAVE "+
+        wave+
+        "  x"+
+        multiplier.toFixed(1);
+
+    enemyText.textContent=
+        (
+            zombies.length+
+            enemiesToSpawn
+        )+
+        " ENEMIES";
+
+    scoreText.textContent=
+        score.toLocaleString();
+}
+
+/* =====================================================
+   MESSAGE
+===================================================== */
+
+let messageTimeout=null;
+
+function showMessage(text){
+
+    message.textContent=text;
+    message.style.opacity="1";
+
+    if(messageTimeout){
+        clearTimeout(messageTimeout);
+    }
+
+    messageTimeout=setTimeout(
+        ()=>{
+            message.style.opacity="0";
+        },
+        900
+    );
+}
+
+/* =====================================================
+   LOOP
+===================================================== */
+
+function gameLoop(time){
+
+    animationID=requestAnimationFrame(gameLoop);
+
+    if(!running || paused){
+        return;
+    }
+
+    let dt=(time-lastTime)/1000;
+
+    lastTime=time;
+
+    if(
+        !Number.isFinite(dt) ||
+        dt<0
+    ){
+        dt=0;
+    }
+
+    dt=Math.min(dt,.033);
+
+    update(dt,time);
+    draw();
+}
+
+/* =====================================================
+   BUTTON HELPER
+===================================================== */
+
+function bindButton(id,callback){
+
+    const button=document.getElementById(id);
+
+    if(!button)return;
+
+    button.addEventListener(
+        "click",
+        function(e){
+
+            e.preventDefault();
+            callback();
+        }
+    );
+}
+
+/* =====================================================
+   SOLO
+===================================================== */
+
+bindButton(
+    "playButton",
+    ()=>{
+        startGame(false);
+    }
+);
+
+/* =====================================================
+   MULTIPLAYER MENU
+===================================================== */
+
+bindButton(
+    "multiplayerButton",
+    ()=>{
+
+        mainMenu.classList.add("hidden");
+        multiplayerMenu.classList.remove("hidden");
+
+        if(socket && socket.connected){
+
+            connectionStatus.textContent=
+                "🟢 Server connected";
+
+            connectionStatus.className=
+                "status good";
+
+        }else{
+
+            connectionStatus.textContent=
+                "Connecting to server...";
+
+            connectionStatus.className=
+                "status";
+        }
+    }
+);
+
+bindButton(
+    "multiplayerBackButton",
+    ()=>{
+
+        multiplayerMenu.classList.add("hidden");
+        mainMenu.classList.remove("hidden");
+    }
+);
+
+bindButton(
+    "createRoomButton",
+    ()=>{
+
+        if(!socket || !socket.connected){
+
+            connectionStatus.textContent=
+                "🔴 No connection to server.";
+
+            connectionStatus.className=
+                "status bad";
+
+            return;
+        }
+
+        connectionStatus.textContent=
+            "Creating room...";
+
+        socket.emit(
+            "createRoom",
+            response=>{
+
+                if(!response || !response.ok){
+
+                    connectionStatus.textContent=
+                        "❌ Could not create room.";
+
+                    connectionStatus.className=
+                        "status bad";
+
+                    return;
+                }
+
+                multiplayer=true;
+                isHost=true;
+                currentRoom=response.code;
+
+                connectedPlayers=1;
+
+                roomCodeElement.textContent=
+                    currentRoom;
+
+                lobbyStatus.innerHTML=
+                    "HOST CREATED<br><br>"+
+                    "Waiting for Player 2...";
+
+                startOnlineButton.classList.add(
+                    "hidden"
+                );
+
+                multiplayerMenu.classList.add(
+                    "hidden"
+                );
+
+                lobbyMenu.classList.remove(
+                    "hidden"
+                );
+            }
+        );
+    }
+);
+
+bindButton(
+    "joinRoomButton",
+    ()=>{
+
+        if(!socket || !socket.connected){
+
+            connectionStatus.textContent=
+                "🔴 No connection to server.";
+
+            connectionStatus.className=
+                "status bad";
+
+            return;
+        }
+
+        const code=
+            roomInput.value
+                .trim()
+                .toUpperCase();
+
+        if(code.length!==5){
+
+            connectionStatus.textContent=
+                "⚠️ Enter the 5-character room code.";
+
+            connectionStatus.className=
+                "status bad";
+
+            return;
+        }
+
+        connectionStatus.textContent=
+            "Joining room...";
+
+        socket.emit(
+            "joinRoom",
+            code,
+            response=>{
+
+                if(!response || !response.ok){
+
+                    connectionStatus.textContent=
+                        "❌ "+
+                        (
+                            response?.message ||
+                            "Could not join."
+                        );
+
+                    connectionStatus.className=
+                        "status bad";
+
+                    return;
+                }
+
+                multiplayer=true;
+                isHost=false;
+                currentRoom=response.code;
+
+                connectedPlayers=2;
+
+                roomCodeElement.textContent=
+                    currentRoom;
+
+                lobbyStatus.innerHTML=
+                    "🟢 CONNECTED<br><br>"+
+                    "Waiting for Host to start...";
+
+                startOnlineButton.classList.add(
+                    "hidden"
+                );
+
+                multiplayerMenu.classList.add(
+                    "hidden"
+                );
+
+                lobbyMenu.classList.remove(
+                    "hidden"
+                );
+            }
+        );
+    }
+);
+
+bindButton(
+    "startOnlineButton",
+    ()=>{
+
+        if(
+            !multiplayer ||
+            !isHost ||
+            !socket ||
+            !socket.connected
+        ){
+            return;
+        }
+
+        if(connectedPlayers<2){
+
+            lobbyStatus.innerHTML=
+                "Waiting for Player 2...";
+
+            return;
+        }
+
+        socket.emit("startMatch");
+    }
+);
+
+bindButton(
+    "leaveLobbyButton",
+    ()=>{
+
+        /*
+        La forma más segura de salir de la sala
+        en esta primera versión es reconectar.
+        */
+
+        location.reload();
+    }
+);
+
+/* =====================================================
+   GAME BUTTONS
+===================================================== */
+
+bindButton(
+    "restartButton",
+    restartGame
+);
+
+bindButton(
+    "continueButton",
+    togglePause
+);
+
+bindButton(
+    "pauseMenuButton",
+    goToMenu
+);
+
+bindButton(
+    "gameOverMenuButton",
+    goToMenu
+);
+
+bindButton(
+    "pauseButton",
+    togglePause
+);
+
+bindButton(
+    "changeWeapon",
+    ()=>{
+
+        if(
+            player &&
+            running &&
+            !paused
+        ){
+            player.changeWeapon();
+        }
+    }
+);
+
+bindButton(
+    "reload",
+    ()=>{
+
+        if(
+            player &&
+            running &&
+            !paused
+        ){
+            player.reload();
+        }
+    }
+);
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+document.addEventListener(
+    "touchmove",
+    e=>{
+        e.preventDefault();
+    },
+    {
+        passive:false
+    }
+);
+
+document.addEventListener(
+    "contextmenu",
+    e=>{
+        e.preventDefault();
+    }
+);
+
+/* =====================================================
+   INITIAL DRAW
+===================================================== */
+
+createMap();
+draw();
+
+})();
+</script>
+
+</body>
+</html>
